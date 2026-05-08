@@ -72,6 +72,15 @@ body.coord-mode .claim-btn{display:none;}
 .claim-submit{padding:8px 16px;border-radius:8px;border:none;background:#EB7F3D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;}
 .claim-submit:disabled{opacity:0.4;cursor:default;}
 .claim-cancel{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;}
+.release-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid rgba(235,127,61,0.4);background:transparent;color:rgba(235,127,61,0.7);cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.release-btn:active{opacity:0.7;}
+body.coord-mode .release-btn{display:none;}
+.card.mine{border-left-color:#8BC6F1 !important;box-shadow:0 0 0 1px rgba(139,198,241,0.2);}
+.myname-wrap{margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.myname-wrap label{font-size:12px;color:rgba(255,255,255,0.4);white-space:nowrap;}
+.myname-input{flex:1;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:14px;}
+.myname-input:focus{outline:none;border-color:#8BC6F1;}
+.celebrate{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#EB7F3D,#C0DD97);padding:16px 20px;text-align:center;font-size:16px;font-weight:700;color:#1C2833;z-index:100;gap:12px;align-items:center;justify-content:center;}
 .empty-state{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.3);}
 .empty-state div{font-size:32px;margin-bottom:8px;}
 </style>
@@ -103,6 +112,10 @@ body.coord-mode .claim-btn{display:none;}
 </div>
 
 <div class="content">
+  <div class="myname-wrap">
+    <label for="myname-input">Mon prenom :</label>
+    <input class="myname-input" id="myname-input" type="text" placeholder="Entre ton prenom pour voir tes chantiers..." maxlength="40" oninput="setMyName(this.value)">
+  </div>
   <div class="find-wrap">
     <input type="search" id="search" placeholder="Chercher un benevole ou un chantier..." oninput="doSearch(this.value)">
   </div>
@@ -111,8 +124,15 @@ body.coord-mode .claim-btn{display:none;}
     <button class="filter-btn" onclick="setFilter('a-faire',this)">Disponibles</button>
     <button class="filter-btn" onclick="setFilter('en-cours',this)">En cours</button>
     <button class="filter-btn" onclick="setFilter('termine',this)">Termines</button>
+    <button class="filter-btn" id="filter-mine" style="display:none;border-color:#8BC6F1;color:#8BC6F1;" onclick="setFilter('mine',this)">Mes chantiers</button>
   </div>
   <div id="board"></div>
+</div>
+
+<div class="celebrate" id="celebrate">
+  <span>&#127881;</span>
+  <span>Toutes les priorites A sont terminees &mdash; Bravo l&rsquo;equipe !</span>
+  <span>&#127881;</span>
 </div>
 
 <script>
@@ -154,9 +174,52 @@ var DATA=[
 
 var state={}, f='tous', q='', coordMode=false, coordPin='', pollTimer=null;
 var nameDebounce={};
+var myName='';
 
-function load(){try{state=JSON.parse(localStorage.getItem('cv26b')||'{}')}catch(e){state={}}}
+function load(){
+  try{state=JSON.parse(localStorage.getItem('cv26b')||'{}')}catch(e){state={}}
+  myName=localStorage.getItem('cv26_myname')||'';
+  if(myName){
+    var inp=document.getElementById('myname-input');
+    if(inp)inp.value=myName;
+    var btn=document.getElementById('filter-mine');
+    if(btn)btn.style.display='block';
+  }
+}
 function save(){try{localStorage.setItem('cv26b',JSON.stringify(state))}catch(e){}}
+
+function setMyName(v){
+  myName=v.trim();
+  localStorage.setItem('cv26_myname',myName);
+  var btn=document.getElementById('filter-mine');
+  if(btn)btn.style.display=myName?'block':'none';
+  if(!myName&&f==='mine')setFilter('tous',document.querySelector('.filter-btn'));
+  render();
+}
+
+function releaseTask(id){
+  if(!confirm('Liberer ce chantier et le remettre disponible?'))return;
+  fetch(apiBase()+'/api/release',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id:id})
+  }).then(r=>r.json()).then(data=>{
+    if(data.state){state=data.state;save();render();}
+    else if(data.error){alert(data.error);}
+  }).catch(function(){
+    if(!state[id])state[id]={};
+    state[id].s='a-faire';
+    state[id].n='';
+    save();render();
+  });
+}
+
+function checkCelebration(){
+  var a1a2=['c1','c2','c3','c4','c5','c6','c7','c8','c9'];
+  var allDone=a1a2.every(function(id){return gS(id)==='termine';});
+  var banner=document.getElementById('celebrate');
+  if(banner)banner.style.display=allDone?'flex':'none';
+}
 function gS(id){return(state[id]||{}).s||'a-faire'}
 function gN(id){return(state[id]||{}).n||''}
 function apiBase(){return API_URL||'';}
@@ -300,22 +363,29 @@ function render(){
     section.tasks.forEach(function(t){
       var v=gS(t.id),nm=gN(t.id);
       var mq=!q||(t.nom.toLowerCase().includes(q)||nm.toLowerCase().includes(q));
-      var mf=f=='tous'||v===f;
+      var isMine=myName&&nm.toLowerCase().includes(myName.toLowerCase());
+      var mf=f==='tous'||v===f||(f==='mine'&&isMine);
       var hid=(!mq||!mf)?'hide':'';
       var hl=(q&&mq&&mf)?'hl':'';
+      var mineClass=isMine?'mine':'';
       var nameHtml=nm?('<span class="card-name">'+nm+'</span>'):('<span class="card-name empty">Non assigne</span>');
       var btnHtml='<button class="coord-btn" onclick="setSt(\''+t.id+'\',\''+nxt(v)+'\')">'+lbl(v)+'</button>';
       var claimHtml='';
       if(v==='a-faire'){
+        var prefill=myName?(' value="'+myName.replace(/"/g,'&quot;')+'"'):'';
         claimHtml='<button class="claim-btn" onclick="claimTask(\''+t.id+'\')">Je prends ce chantier</button>'+
           '<div class="claim-form" id="claim-form-'+t.id+'">'+
-          '<input class="claim-input" id="claim-input-'+t.id+'" placeholder="Ton prenom..." maxlength="40" '+
+          '<input class="claim-input" id="claim-input-'+t.id+'" placeholder="Ton prenom..." maxlength="40"'+prefill+' '+
             'onkeydown="if(event.key===\'Enter\')submitClaim(\''+t.id+'\')">'+
           '<button class="claim-submit" id="claim-submit-'+t.id+'" onclick="submitClaim(\''+t.id+'\')">Confirmer</button>'+
           '<button class="claim-cancel" onclick="claimTask(\''+t.id+'\')">&#x2715;</button>'+
           '</div>';
       }
-      html+='<div class="card '+v+' '+hid+' '+hl+'">'+
+      var releaseHtml='';
+      if(v==='en-cours'){
+        releaseHtml='<button class="release-btn" onclick="releaseTask(\''+t.id+'\')">Liberer</button>';
+      }
+      html+='<div class="card '+v+' '+hid+' '+hl+' '+mineClass+'">'+
         '<div class="card-top">'+
         '<div class="card-nom">'+t.nom+'</div>'+
         '<div class="card-team">'+t.team+'</div>'+
@@ -325,12 +395,14 @@ function render(){
         nameHtml+
         '<input class="coord-input" placeholder="Nom(s) benevoles" value="'+nm+'" oninput="setNm(\''+t.id+'\',this.value)">'+
         btnHtml+
+        releaseHtml+
         '</div>'+
         claimHtml+
         '</div>';
     });
   });
   document.getElementById('board').innerHTML=html||'<div class="empty-state"><div>&#128269;</div>Aucun chantier trouve</div>';
+  checkCelebration();
 }
 
 load();

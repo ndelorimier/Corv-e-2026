@@ -70,6 +70,22 @@ app.post('/api/claim', (req, res) => {
   res.json({ ok: true, state });
 });
 
+// Liberer une tache "en-cours" (sans PIN) — remet a "a-faire"
+app.post('/api/release', (req, res) => {
+  const { id } = req.body;
+  if (!TASK_IDS.includes(id)) {
+    return res.status(400).json({ error: 'Tache inconnue' });
+  }
+  if (!state[id]) state[id] = { s: 'a-faire', n: '' };
+  if (state[id].s === 'termine') {
+    return res.status(409).json({ error: 'Tache terminee — seul le coordinateur peut la modifier' });
+  }
+  state[id].s = 'a-faire';
+  state[id].n = '';
+  saveState(state);
+  res.json({ ok: true, state });
+});
+
 app.post('/api/reset', (req, res) => {
   const { pin } = req.body;
   if (pin !== PIN) return res.status(403).json({ error: 'Code incorrect' });
