@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Liste d'achats — Corvée Camp Bruchési</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #1a1a1a; padding: 20px; max-width: 900px; margin: auto; }
+  h1 { font-size: 20px; font-weight: bold; border-bottom: 3px solid #C0392B; padding-bottom: 6px; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #555; margin-bottom: 18px; }
+  .alert { background: #FFF3CD; border-left: 4px solid #F0AD4E; padding: 8px 12px; margin-bottom: 16px; font-size: 12px; border-radius: 2px; }
+  .alert strong { display: block; margin-bottom: 2px; }
+  h2 { font-size: 14px; font-weight: bold; color: white; padding: 6px 10px; margin: 18px 0 8px 0; border-radius: 3px; }
+  h2.betonel { background: #C0392B; }
+  h2.rona { background: #2980B9; }
+  h2.location { background: #D35400; }
+  h2.checklist { background: #27AE60; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th { background: #f0f0f0; text-align: left; padding: 5px 8px; font-size: 12px; border: 1px solid #ddd; }
+  td { padding: 5px 8px; border: 1px solid #ddd; vertical-align: top; }
+  td.check { width: 30px; text-align: center; }
+  input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+  tr:nth-child(even) { background: #fafafa; }
+  .urgent { color: #C0392B; font-weight: bold; }
+  .ok { color: #888; text-decoration: line-through; }
+  .note { font-size: 11px; color: #666; font-style: italic; }
+  .qty { font-weight: bold; font-size: 13px; }
+  .section-note { font-size: 11px; color: #555; background: #f9f9f9; border-left: 3px solid #aaa; padding: 5px 8px; margin-bottom: 8px; }
+  .total { font-weight: bold; font-size: 12px; color: #333; padding: 4px 0; }
+  @media print {
+    body { padding: 10px; font-size: 12px; }
+    h2 { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .alert { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    input[type="checkbox"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media print { .two-col { display: block; } }
+</style>
+</head>
+<body>
+
+<h1>🛒 Liste d'achats — Corvée d'ouverture</h1>
+<div class="subtitle">Camp Bruchési &nbsp;·&nbsp; Samedi 9 mai 2026 &nbsp;·&nbsp; Imprimé le 7 mai 2026</div>
+
+<div class="alert">
+  <strong>⚠️ AVANT DE PARTIR — Faire l'inventaire de la peinture existante au camp</strong>
+  Vérifier les quantités en stock (blanc, rouge, gris) et déduire des quantités ci-dessous. Rapporter tous les reçus.
+</div>
+
+<!-- BETONEL -->
+<h2 class="betonel">🎨 BETONEL — Peinture &amp; apprêt</h2>
+<div class="section-note">Usage extérieur sauf indication · Demander si l'apprêt fait aussi scellant pour le bois nu · Confirmer couleur cafétéria avec Nicolas avant d'acheter</div>
+<table>
+  <tr><th class="check">✓</th><th>Produit</th><th>Quantité</th><th>Pour quel chantier</th></tr>
+  <tr>
+    <td class="check"><input type="checkbox"></td>
+    <td><strong class="urgent">Apprêt bois extérieur</strong></td>
+    <td class="qty urgent">3 gallons</td>
+    <td>Cabane d'accueil — bois nu, OBLIGATOIRE avant peinture</td>
+  </tr>
+  <tr>
+    <td class="check"><input type="checkbox"></td>
+    <td><strong>Peinture blanche extérieure</strong></td>
+    <td class="qty">18 gallons</td>
+    <td>Cabane accueil (3), Bayou (3), Amirauté (8), Clôture (2), Fourmillière cadrage (2)</td>
+  </tr>
+  <tr>
+    <td class="check"><input type="checkbox"></td>
+    <td><strong>Peinture rouge À MÉTAL</strong></td>
+    <td class="qty">4 gallons</td>
+    <td>Toiture tôle cabane accueil (2) + Toiture tôle Ptit Bob (2)</td>
+  </tr>
+  <tr>
+    <td class="check"><input type="checkbox"></td>
+    <td><strong>Peinture rouge POUR BOIS</strong></td>
+    <td class="qty">2 gallons</td>
+    <td>Portes ext. Fourmillière (1) + Trim fenêtres cabane à sucre (1)</td>
+  </tr>
+  <tr>
+    <td class="check"><input type="checkbox"></td>
+    <td><strong>Peinture grise extérieure</strong></td>
+    <td class="qty">4 gallons</td>
+    <td>Balcons Wigwam (2) + Kibbutz (2)</td>
+  </tr>
+  <tr>
+    <td class="check"><input type="checkbox"></td>
+    <td><strong>Peinture portes cafétéria</strong> <span class="note">⚠️ confirmer couleur</span></td>
+    <td class="qty">2 gallons</td>
+    <td>Portes ext. + int. cafétéria</td>
+  </tr>
+</table>
+<div class="total">Total estimé Betonel : ~33 gallons (moins le stock existant au camp)</div>
+
+<div class="two-col">
+<div>
+<!-- RONA PEINTURE -->
+<h2 class="rona">🔧 RONA — Matériel de peinture</h2>
+<table>
+  <tr><th class="check">✓</th><th>Article</th><th>Qté</th></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Rouleaux 9" manchons</td><td class="qty">15</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Rouleaux 4" manchons</td><td class="qty">8</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Cadres pour rouleaux</td><td class="qty">6</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Pinceaux 2"</td><td class="qty">8</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Pinceaux 3"</td><td class="qty">6</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Bacs à peinture</td><td class="qty">14</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Ruban à masquer bleu</td><td class="qty">20 rlx</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Feuilles de protection</td><td class="qty">15</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Grattoirs à peinture</td><td class="qty">10</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Papier sablé grain 80</td><td class="qty">10 feuilles</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Papier sablé grain 120</td><td class="qty">8 feuilles</td></tr>
+</table>
+</div>
+<div>
+<!-- RONA TERRAIN -->
+<h2 class="rona">🌿 RONA — Terrain &amp; construction</h2>
+<table>
+  <tr><th class="check">✓</th><th>Article</th><th>Qté</th></tr>
+  <tr><td class="check"><input type="checkbox"></td><td><strong>Râteaux à feuilles</strong> <span class="note">5,99$ ch.</span></td><td class="qty">10</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Grands sacs compostables</td><td class="qty">2 paquets</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Pelles plates</td><td class="qty">3</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td colspan="2" style="background:#FFF3CD"><strong>Clôture — ⚠️ Attendre confirmation photo</strong></td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Poteaux 4x4 cèdre (8 pi)</td><td class="qty">13</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Planches 2x4 (8 pi)</td><td class="qty">36</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Vis bois ext. 3½"</td><td class="qty">3 boîtes</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Vis bois ext. 2½"</td><td class="qty">2 boîtes</td></tr>
+</table>
+
+<!-- LOCATION -->
+<h2 class="location">🚗 LOCATION — Réserver maintenant!</h2>
+<table>
+  <tr><th class="check">✓</th><th>Équipement</th><th>Qté</th></tr>
+  <tr><td class="check"><input type="checkbox"></td><td><strong class="urgent">Pressure washer</strong></td><td class="qty urgent">1</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td><strong class="urgent">Récureuse à plancher</strong></td><td class="qty urgent">1</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td><strong class="urgent">Échafaud 12-16 pi</strong></td><td class="qty urgent">1</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Rotoculteur</td><td class="qty">1</td></tr>
+  <tr><td><span class="ok">✅</span></td><td class="ok">Balai mécanique</td><td class="ok">Au camp</td></tr>
+</table>
+</div>
+</div>
+
+<!-- CHECKLIST DÉPART -->
+<h2 class="checklist">✅ Checklist avant de partir</h2>
+<table>
+  <tr><td class="check"><input type="checkbox"></td><td>Inventaire peinture existante au camp effectué</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Couleur des portes de la cafétéria confirmée avec Nicolas</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Photo de la clôture reçue et quantités de bois confirmées</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Locations réservées (pressure washer, récureuse, échafaud)</td></tr>
+  <tr><td class="check"><input type="checkbox"></td><td>Reçus conservés — budget corvée</td></tr>
+</table>
+
+</body>
+</html>
