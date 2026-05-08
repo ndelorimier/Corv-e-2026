@@ -87,8 +87,29 @@ body.coord-mode .release-btn{display:none;}
 .note-area.open{display:block;}
 .note-area:focus{outline:none;border-color:#8BC6F1;}
 .note-text{font-size:12px;color:rgba(255,255,255,0.45);font-style:italic;margin-top:6px;padding:0 2px;line-height:1.4;}
-.theme-btn{font-size:15px;background:transparent;border:none;cursor:pointer;padding:2px 6px;opacity:0.6;}
-.theme-btn:hover{opacity:1;}
+.theme-btn,.proj-btn,.sound-btn{font-size:15px;background:transparent;border:none;cursor:pointer;padding:2px 6px;opacity:0.6;}
+.theme-btn:hover,.proj-btn:hover,.sound-btn:hover{opacity:1;}
+@keyframes card-flash{0%{box-shadow:0 0 0 0 rgba(235,127,61,0.9);}40%{box-shadow:0 0 0 8px rgba(235,127,61,0.3);}100%{box-shadow:0 0 0 0 rgba(235,127,61,0);}}
+.card.flash{animation:card-flash 1.8s ease-out;}
+.new-badge{display:inline-block;font-size:10px;font-weight:700;background:#EB7F3D;color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle;animation:fade-badge 4s ease-out forwards;}
+@keyframes fade-badge{0%,60%{opacity:1;}100%{opacity:0;}}
+body.projection .hdr-title{font-size:26px;}
+body.projection .hdr-sub{font-size:16px;}
+body.projection .stat{padding:22px;}
+body.projection .stat-n{font-size:52px;}
+body.projection .stat-l{font-size:14px;}
+body.projection .progress-bar{height:10px;}
+body.projection .content{padding:20px 30px;}
+body.projection .card{padding:18px 20px;margin-bottom:12px;border-left-width:6px;}
+body.projection .card-nom{font-size:20px;}
+body.projection .card-team{font-size:14px;padding:5px 12px;}
+body.projection .card-status{font-size:15px;padding:7px 16px;}
+body.projection .card-name{font-size:18px;}
+body.projection .section-hdr{font-size:13px;margin:28px 0 12px;}
+body.projection .myname-wrap,body.projection .find-wrap,body.projection .filters,
+body.projection .claim-btn,body.projection .claim-form,body.projection .release-btn,
+body.projection .note-btn,body.projection .note-area,body.projection .note-text,
+body.projection .coord-toggle,body.projection .coord-btn,body.projection .coord-input{display:none!important;}
 body.light{background:#EDECEA;color:#1C2833;}
 body.light .hdr{border-bottom-color:rgba(0,0,0,0.1);}
 body.light .hdr-sub{color:rgba(0,0,0,0.4);}
@@ -137,6 +158,8 @@ body.light .celebrate{color:#1C2833;}
   <div class="hdr-right">
     <div class="sync-badge" id="sync-badge">Statique</div>
     <br>
+    <button class="sound-btn" onclick="toggleSound()" id="sound-btn" title="Sons de notification">🔔</button>
+    <button class="proj-btn" onclick="toggleProjection()" id="proj-btn" title="Mode projection">🖥️</button>
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Changer le theme">🌙</button>
     <button class="coord-toggle" onclick="toggleCoord()" id="coord-btn">Mode coordinateur</button>
   </div>
@@ -216,7 +239,8 @@ var DATA=[
 
 var state={}, f='tous', q='', coordMode=false, coordPin='', pollTimer=null;
 var nameDebounce={}, noteDebounce={};
-var myName='', lightMode=false;
+var myName='', lightMode=false, projMode=false, soundEnabled=false;
+var prevState=null, recentChanges={};
 
 function load(){
   try{state=JSON.parse(localStorage.getItem('cv26b')||'{}')}catch(e){state={}}
@@ -228,11 +252,10 @@ function load(){
     if(btn)btn.style.display='block';
   }
   lightMode=localStorage.getItem('cv26_theme')==='light';
-  if(lightMode){
-    document.body.classList.add('light');
-    var tb=document.getElementById('theme-btn');
-    if(tb)tb.textContent='☀️';
-  }
+  if(lightMode){document.body.classList.add('light');var tb=document.getElementById('theme-btn');if(tb)tb.textContent='☀️';}
+  soundEnabled=localStorage.getItem('cv26_sound')==='1';
+  if(soundEnabled){var sb=document.getElementById('sound-btn');if(sb){sb.textContent='🔔';sb.style.opacity='1';}}
+  else{var sb2=document.getElementById('sound-btn');if(sb2)sb2.textContent='🔕';}
 }
 function save(){try{localStorage.setItem('cv26b',JSON.stringify(state))}catch(e){}}
 
@@ -260,6 +283,72 @@ function releaseTask(id){
     state[id].n='';
     save();render();
   });
+}
+
+function toggleProjection(){
+  projMode=!projMode;
+  document.body.classList.toggle('projection',projMode);
+  var b=document.getElementById('proj-btn');
+  if(b){b.style.opacity=projMode?'1':'0.6';}
+  if(projMode&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
+  else if(!projMode&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+}
+
+function toggleSound(){
+  soundEnabled=!soundEnabled;
+  localStorage.setItem('cv26_sound',soundEnabled?'1':'0');
+  var b=document.getElementById('sound-btn');
+  if(b){b.textContent=soundEnabled?'🔔':'🔕';b.style.opacity=soundEnabled?'1':'0.6';}
+  if(soundEnabled){
+    // debloquer AudioContext sur interaction utilisateur
+    try{var ctx=new(window.AudioContext||window.webkitAudioContext)();ctx.close();}catch(e){}
+  }
+}
+
+function playSound(type){
+  if(!soundEnabled)return;
+  try{
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    var g=ctx.createGain();
+    g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.25,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
+    var o=ctx.createOscillator();
+    o.connect(g);
+    if(type==='claim'){
+      o.type='sine';
+      o.frequency.setValueAtTime(660,ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(880,ctx.currentTime+0.15);
+    } else {
+      o.type='triangle';
+      o.frequency.setValueAtTime(523,ctx.currentTime);
+      o.frequency.setValueAtTime(784,ctx.currentTime+0.15);
+      o.frequency.setValueAtTime(1047,ctx.currentTime+0.3);
+    }
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime+0.6);
+  }catch(e){}
+}
+
+function detectChanges(newState){
+  if(!prevState){prevState=JSON.parse(JSON.stringify(newState));return;}
+  var TASK_IDS=['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','c13','c14','c15','c16','c17','c18','c19'];
+  TASK_IDS.forEach(function(id){
+    var prev=(prevState[id]||{}).s||'a-faire';
+    var curr=(newState[id]||{}).s||'a-faire';
+    if(prev!==curr){
+      recentChanges[id]=Date.now()+4000;
+      if(curr==='en-cours')playSound('claim');
+      if(curr==='termine')playSound('complete');
+      render();
+      setTimeout(function(){
+        var card=document.getElementById('card-'+id);
+        if(card){card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash');}
+      },30);
+      setTimeout(function(){delete recentChanges[id];render();},4500);
+    }
+  });
+  prevState=JSON.parse(JSON.stringify(newState));
 }
 
 function toggleTheme(){
@@ -379,7 +468,7 @@ function fetchState(){
   fetch(apiBase()+'/api/state?t='+Date.now())
     .then(r=>r.json())
     .then(function(data){
-      if(data.state){state=data.state;save();render();}
+      if(data.state){detectChanges(data.state);state=data.state;save();render();}
       setBadge('live');
     })
     .catch(function(){setBadge('err');});
@@ -472,6 +561,8 @@ function render(){
       if(v==='en-cours'){
         releaseHtml='<button class="release-btn" onclick="releaseTask(\''+t.id+'\')">Liberer</button>';
       }
+      var isNew=recentChanges[t.id]&&recentChanges[t.id]>Date.now();
+      var newBadge=isNew?'<span class="new-badge">Nouveau</span>':'';
       var note=gNote(t.id);
       var noteHtml='<div>'+
         (note?'<div class="note-text">'+note.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>':'')+
@@ -483,9 +574,9 @@ function render(){
           (note?'✏️ Modifier la note':'+ Ajouter une note')+
         '</button>'+
         '</div>';
-      html+='<div class="card '+v+' '+hid+' '+hl+' '+mineClass+'">'+
+      html+='<div id="card-'+t.id+'" class="card '+v+' '+hid+' '+hl+' '+mineClass+'">'+
         '<div class="card-top">'+
-        '<div class="card-nom">'+t.nom+'</div>'+
+        '<div class="card-nom">'+t.nom+newBadge+'</div>'+
         '<div class="card-team">'+t.team+'</div>'+
         '</div>'+
         '<div class="card-bottom">'+
