@@ -62,6 +62,16 @@ body.coord-mode .coord-input{display:block;}
 body.coord-mode .coord-btn{display:block;}
 body.coord-mode .card-name{display:none;}
 .coord-toggle{font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.4);cursor:pointer;}
+.claim-btn{font-size:12px;padding:6px 14px;border-radius:20px;border:none;background:#EB7F3D;color:#fff;cursor:pointer;font-weight:700;white-space:nowrap;flex-shrink:0;}
+.claim-btn:active{opacity:0.8;}
+body.coord-mode .claim-btn{display:none;}
+.claim-form{display:none;margin-top:10px;gap:8px;align-items:center;}
+.claim-form.open{display:flex;}
+.claim-input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(235,127,61,0.5);background:rgba(255,255,255,0.07);color:#fff;font-size:14px;}
+.claim-input:focus{outline:none;border-color:#EB7F3D;}
+.claim-submit{padding:8px 16px;border-radius:8px;border:none;background:#EB7F3D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;}
+.claim-submit:disabled{opacity:0.4;cursor:default;}
+.claim-cancel{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;}
 .empty-state{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.3);}
 .empty-state div{font-size:32px;margin-bottom:8px;}
 </style>
@@ -167,6 +177,38 @@ function setSt(id,v){
   }
 }
 
+function claimTask(id){
+  var form=document.getElementById('claim-form-'+id);
+  if(!form)return;
+  form.classList.toggle('open');
+  if(form.classList.contains('open')){
+    var inp=document.getElementById('claim-input-'+id);
+    if(inp)inp.focus();
+  }
+}
+
+function submitClaim(id){
+  var inp=document.getElementById('claim-input-'+id);
+  var btn=document.getElementById('claim-submit-'+id);
+  var name=(inp?inp.value:'').trim();
+  if(!name)return;
+  if(btn)btn.disabled=true;
+  fetch(apiBase()+'/api/claim',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id:id,name:name})
+  }).then(r=>r.json()).then(data=>{
+    if(data.state){state=data.state;save();render();}
+    else if(data.error){alert(data.error);if(btn)btn.disabled=false;}
+  }).catch(function(){
+    // fallback offline: update local state
+    if(!state[id])state[id]={};
+    state[id].s='en-cours';
+    state[id].n=name;
+    save();render();
+  });
+}
+
 function setNm(id,v){
   if(!state[id])state[id]={};
   state[id].n=v;
@@ -263,6 +305,16 @@ function render(){
       var hl=(q&&mq&&mf)?'hl':'';
       var nameHtml=nm?('<span class="card-name">'+nm+'</span>'):('<span class="card-name empty">Non assigne</span>');
       var btnHtml='<button class="coord-btn" onclick="setSt(\''+t.id+'\',\''+nxt(v)+'\')">'+lbl(v)+'</button>';
+      var claimHtml='';
+      if(v==='a-faire'){
+        claimHtml='<button class="claim-btn" onclick="claimTask(\''+t.id+'\')">Je prends ce chantier</button>'+
+          '<div class="claim-form" id="claim-form-'+t.id+'">'+
+          '<input class="claim-input" id="claim-input-'+t.id+'" placeholder="Ton prenom..." maxlength="40" '+
+            'onkeydown="if(event.key===\'Enter\')submitClaim(\''+t.id+'\')">'+
+          '<button class="claim-submit" id="claim-submit-'+t.id+'" onclick="submitClaim(\''+t.id+'\')">Confirmer</button>'+
+          '<button class="claim-cancel" onclick="claimTask(\''+t.id+'\')">&#x2715;</button>'+
+          '</div>';
+      }
       html+='<div class="card '+v+' '+hid+' '+hl+'">'+
         '<div class="card-top">'+
         '<div class="card-nom">'+t.nom+'</div>'+
@@ -273,7 +325,9 @@ function render(){
         nameHtml+
         '<input class="coord-input" placeholder="Nom(s) benevoles" value="'+nm+'" oninput="setNm(\''+t.id+'\',this.value)">'+
         btnHtml+
-        '</div></div>';
+        '</div>'+
+        claimHtml+
+        '</div>';
     });
   });
   document.getElementById('board').innerHTML=html||'<div class="empty-state"><div>&#128269;</div>Aucun chantier trouve</div>';

@@ -51,6 +51,25 @@ app.post('/api/state', (req, res) => {
   res.json({ ok: true, state });
 });
 
+// Prise en charge par un benevole (sans PIN) — seulement si la tache est encore libre
+app.post('/api/claim', (req, res) => {
+  const { id, name } = req.body;
+  if (!id || !name || !name.trim()) {
+    return res.status(400).json({ error: 'id et name requis' });
+  }
+  if (!TASK_IDS.includes(id)) {
+    return res.status(400).json({ error: 'Tache inconnue' });
+  }
+  if (!state[id]) state[id] = { s: 'a-faire', n: '' };
+  if (state[id].s !== 'a-faire') {
+    return res.status(409).json({ error: 'Tache deja prise', state });
+  }
+  state[id].s = 'en-cours';
+  state[id].n = name.trim();
+  saveState(state);
+  res.json({ ok: true, state });
+});
+
 app.post('/api/reset', (req, res) => {
   const { pin } = req.body;
   if (pin !== PIN) return res.status(403).json({ error: 'Code incorrect' });
