@@ -81,6 +81,47 @@ body.coord-mode .release-btn{display:none;}
 .myname-input{flex:1;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:14px;}
 .myname-input:focus{outline:none;border-color:#8BC6F1;}
 .celebrate{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#EB7F3D,#C0DD97);padding:16px 20px;text-align:center;font-size:16px;font-weight:700;color:#1C2833;z-index:100;gap:12px;align-items:center;justify-content:center;}
+.note-btn{font-size:11px;padding:3px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.35);cursor:pointer;margin-top:8px;display:block;}
+.note-btn:hover{color:rgba(255,255,255,0.6);}
+.note-area{width:100%;margin-top:6px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:13px;resize:none;font-family:inherit;display:none;}
+.note-area.open{display:block;}
+.note-area:focus{outline:none;border-color:#8BC6F1;}
+.note-text{font-size:12px;color:rgba(255,255,255,0.45);font-style:italic;margin-top:6px;padding:0 2px;line-height:1.4;}
+.theme-btn{font-size:15px;background:transparent;border:none;cursor:pointer;padding:2px 6px;opacity:0.6;}
+.theme-btn:hover{opacity:1;}
+body.light{background:#EDECEA;color:#1C2833;}
+body.light .hdr{border-bottom-color:rgba(0,0,0,0.1);}
+body.light .hdr-sub{color:rgba(0,0,0,0.4);}
+body.light .hdr-title{color:#C0621A;}
+body.light .stat{background:#EDECEA;}
+body.light .stats{background:rgba(0,0,0,0.06);}
+body.light .progress-wrap{background:rgba(0,0,0,0.05);}
+body.light .progress-bar{background:rgba(0,0,0,0.1);}
+body.light .card{background:rgba(0,0,0,0.04);}
+body.light .card.en-cours{background:rgba(235,127,61,0.1);}
+body.light .card.termine{background:rgba(100,160,80,0.06);}
+body.light .card.mine{box-shadow:0 0 0 1px rgba(60,120,180,0.3);}
+body.light .card-team{color:rgba(0,0,0,0.4);background:rgba(0,0,0,0.06);}
+body.light .card-name{color:rgba(0,0,0,0.6);}
+body.light .card-name.empty{color:rgba(0,0,0,0.25);}
+body.light .st-af{background:rgba(0,0,0,0.08);color:rgba(0,0,0,0.4);}
+body.light .st-ec{background:rgba(235,127,61,0.2);color:#C0621A;}
+body.light .st-tm{background:rgba(80,140,60,0.2);color:#3D7A30;}
+body.light .g{color:#3D7A30;}
+body.light .gr{color:rgba(0,0,0,0.35);}
+body.light .sync-badge{background:rgba(0,0,0,0.08);color:rgba(0,0,0,0.4);}
+body.light .sync-badge.live{background:rgba(60,130,40,0.15);color:#3D7A30;}
+body.light .sync-badge.err{background:rgba(180,40,40,0.1);color:#AA2020;}
+body.light .filter-btn{color:rgba(0,0,0,0.5);border-color:rgba(0,0,0,0.2);}
+body.light .find-wrap input,body.light .myname-input,body.light .coord-input,body.light .claim-input,body.light .note-area{background:rgba(0,0,0,0.05);color:#1C2833;border-color:rgba(0,0,0,0.15);}
+body.light .section-hdr::after{background:rgba(0,0,0,0.1);}
+body.light .myname-wrap label{color:rgba(0,0,0,0.4);}
+body.light .note-text{color:rgba(0,0,0,0.45);}
+body.light .note-btn{border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.4);}
+body.light .coord-toggle,body.light .claim-cancel,body.light .release-btn{color:rgba(0,0,0,0.4);border-color:rgba(0,0,0,0.15);}
+body.light .progress-label{color:rgba(0,0,0,0.4);}
+body.light .empty-state{color:rgba(0,0,0,0.3);}
+body.light .celebrate{color:#1C2833;}
 .empty-state{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.3);}
 .empty-state div{font-size:32px;margin-bottom:8px;}
 </style>
@@ -96,6 +137,7 @@ body.coord-mode .release-btn{display:none;}
   <div class="hdr-right">
     <div class="sync-badge" id="sync-badge">Statique</div>
     <br>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Changer le theme">🌙</button>
     <button class="coord-toggle" onclick="toggleCoord()" id="coord-btn">Mode coordinateur</button>
   </div>
 </div>
@@ -173,8 +215,8 @@ var DATA=[
 ];
 
 var state={}, f='tous', q='', coordMode=false, coordPin='', pollTimer=null;
-var nameDebounce={};
-var myName='';
+var nameDebounce={}, noteDebounce={};
+var myName='', lightMode=false;
 
 function load(){
   try{state=JSON.parse(localStorage.getItem('cv26b')||'{}')}catch(e){state={}}
@@ -184,6 +226,12 @@ function load(){
     if(inp)inp.value=myName;
     var btn=document.getElementById('filter-mine');
     if(btn)btn.style.display='block';
+  }
+  lightMode=localStorage.getItem('cv26_theme')==='light';
+  if(lightMode){
+    document.body.classList.add('light');
+    var tb=document.getElementById('theme-btn');
+    if(tb)tb.textContent='☀️';
   }
 }
 function save(){try{localStorage.setItem('cv26b',JSON.stringify(state))}catch(e){}}
@@ -212,6 +260,45 @@ function releaseTask(id){
     state[id].n='';
     save();render();
   });
+}
+
+function toggleTheme(){
+  lightMode=!lightMode;
+  document.body.classList.toggle('light',lightMode);
+  localStorage.setItem('cv26_theme',lightMode?'light':'dark');
+  var tb=document.getElementById('theme-btn');
+  if(tb)tb.textContent=lightMode?'☀️':'🌙';
+}
+
+function gNote(id){return(state[id]||{}).note||'';}
+
+function toggleNote(id){
+  var area=document.getElementById('note-area-'+id);
+  var btn=document.getElementById('note-btn-'+id);
+  if(!area)return;
+  var open=area.classList.toggle('open');
+  if(open){area.focus();}
+  if(btn)btn.textContent=open?(gNote(id)?'✕ Fermer':'✕ Annuler'):(gNote(id)?'✏️ Modifier la note':'+ Ajouter une note');
+}
+
+function draftNote(id,val){
+  clearTimeout(noteDebounce[id]);
+  noteDebounce[id]=setTimeout(function(){saveNote(id,val);},800);
+}
+
+function saveNote(id,val){
+  var area=document.getElementById('note-area-'+id);
+  var value=(val!==undefined?val:(area?area.value:'')).trim();
+  if(!state[id])state[id]={};
+  state[id].note=value;
+  save();
+  var btn=document.getElementById('note-btn-'+id);
+  if(btn)btn.textContent=value?'✏️ Modifier la note':'+ Ajouter une note';
+  fetch(apiBase()+'/api/note',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id:id,note:value})
+  }).catch(()=>{});
 }
 
 function checkCelebration(){
@@ -385,6 +472,17 @@ function render(){
       if(v==='en-cours'){
         releaseHtml='<button class="release-btn" onclick="releaseTask(\''+t.id+'\')">Liberer</button>';
       }
+      var note=gNote(t.id);
+      var noteHtml='<div>'+
+        (note?'<div class="note-text">'+note.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>':'')+
+        '<textarea class="note-area" id="note-area-'+t.id+'" rows="2" maxlength="200" placeholder="Ajouter une note visible par tous..." '+
+          'oninput="draftNote(\''+t.id+'\',this.value)" onblur="saveNote(\''+t.id+'\')">'+
+          note.replace(/&/g,'&amp;').replace(/</g,'&lt;')+
+        '</textarea>'+
+        '<button class="note-btn" id="note-btn-'+t.id+'" onclick="toggleNote(\''+t.id+'\')">'+
+          (note?'✏️ Modifier la note':'+ Ajouter une note')+
+        '</button>'+
+        '</div>';
       html+='<div class="card '+v+' '+hid+' '+hl+' '+mineClass+'">'+
         '<div class="card-top">'+
         '<div class="card-nom">'+t.nom+'</div>'+
@@ -398,6 +496,7 @@ function render(){
         releaseHtml+
         '</div>'+
         claimHtml+
+        noteHtml+
         '</div>';
     });
   });

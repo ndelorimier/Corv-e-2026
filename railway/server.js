@@ -70,6 +70,18 @@ app.post('/api/claim', (req, res) => {
   res.json({ ok: true, state });
 });
 
+// Note libre sur une tache (sans PIN, max 200 caracteres)
+app.post('/api/note', (req, res) => {
+  const { id, note } = req.body;
+  if (!TASK_IDS.includes(id)) {
+    return res.status(400).json({ error: 'Tache inconnue' });
+  }
+  if (!state[id]) state[id] = { s: 'a-faire', n: '' };
+  state[id].note = (note || '').trim().substring(0, 200);
+  saveState(state);
+  res.json({ ok: true, state });
+});
+
 // Liberer une tache "en-cours" (sans PIN) — remet a "a-faire"
 app.post('/api/release', (req, res) => {
   const { id } = req.body;
