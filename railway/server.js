@@ -6,8 +6,9 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PIN = process.env.COORD_PIN || '2026';
-const STATE_FILE = '/tmp/corvee_state.json';
-const TASKS_FILE = '/tmp/corvee_tasks.json';
+const DATA_DIR = process.env.DATA_DIR || '/tmp';
+const STATE_FILE = DATA_DIR + '/corvee_state.json';
+const TASKS_FILE = DATA_DIR + '/corvee_tasks.json';
 
 app.use(cors());
 app.use(express.json());
@@ -132,6 +133,16 @@ app.post('/api/release', (req, res) => {
   if (state[id].s === 'termine') return res.status(409).json({ error: 'Tache terminee — seul le coordinateur peut la modifier' });
   state[id].s = 'a-faire';
   state[id].n = '';
+  saveState(state);
+  res.json({ ok: true, state });
+});
+
+app.post('/api/complete', (req, res) => {
+  const { id } = req.body;
+  if (!getTaskIds().includes(id)) return res.status(400).json({ error: 'Tache inconnue' });
+  if (!state[id]) state[id] = { s: 'a-faire', n: '' };
+  if (state[id].s !== 'en-cours') return res.status(409).json({ error: 'Tache non en cours' });
+  state[id].s = 'termine';
   saveState(state);
   res.json({ ok: true, state });
 });

@@ -74,6 +74,8 @@ body.coord-mode .claim-btn{display:none;}
 .claim-cancel{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;}
 .release-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid rgba(235,127,61,0.4);background:transparent;color:rgba(235,127,61,0.7);cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .release-btn:active{opacity:0.7;}
+.complete-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid rgba(80,200,120,0.5);background:rgba(80,200,120,0.12);color:rgb(80,200,120);cursor:pointer;white-space:nowrap;flex-shrink:0;font-weight:600;}
+.complete-btn:active{opacity:0.7;}
 body.coord-mode .release-btn{display:none;}
 .card.mine{border-left-color:#8BC6F1 !important;box-shadow:0 0 0 1px rgba(139,198,241,0.2);}
 .myname-wrap{margin-bottom:14px;display:flex;align-items:center;gap:10px;}
@@ -569,6 +571,21 @@ function setMyName(v){
   if(btn)btn.style.display=myName?'block':'none';
   if(!myName&&f==='mine')setFilter('tous',document.querySelector('.filter-btn'));
   render();
+}
+
+function completeTask(id){
+  if(!confirm('Marquer ce chantier comme TERMINE?'))return;
+  fetch(apiBase()+'/api/complete',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id:id})
+  }).then(r=>r.json()).then(function(data){
+    if(data.state){state=data.state;save();render();}
+    else if(data.error){alert(data.error);}
+  }).catch(function(){
+    if(!state[id])state[id]={};
+    state[id].s='termine';
+    save();render();
+  });
 }
 
 function releaseTask(id){
@@ -1226,7 +1243,8 @@ function render(){
       }
       var releaseHtml='';
       if(v==='en-cours'){
-        releaseHtml='<button class="release-btn" onclick="releaseTask(\''+t.id+'\')">Liberer</button>';
+        releaseHtml='<button class="release-btn" onclick="releaseTask(\''+t.id+'\')">Liberer</button>'+
+          '<button class="complete-btn" onclick="completeTask(\''+t.id+'\')">✅ Termine!</button>';
       }
       var isNew=recentChanges[t.id]&&recentChanges[t.id]>Date.now();
       var newBadge=isNew?'<span class="new-badge">Nouveau</span>':'';
