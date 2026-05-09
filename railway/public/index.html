@@ -87,8 +87,17 @@ body.coord-mode .release-btn{display:none;}
 .note-area.open{display:block;}
 .note-area:focus{outline:none;border-color:#8BC6F1;}
 .note-text{font-size:12px;color:rgba(255,255,255,0.45);font-style:italic;margin-top:6px;padding:0 2px;line-height:1.4;}
-.theme-btn,.proj-btn,.sound-btn{font-size:15px;background:transparent;border:none;cursor:pointer;padding:2px 6px;opacity:0.6;}
-.theme-btn:hover,.proj-btn:hover,.sound-btn:hover{opacity:1;}
+.theme-btn,.proj-btn,.sound-btn,.qr-btn{font-size:15px;background:transparent;border:none;cursor:pointer;padding:2px 6px;opacity:0.6;}
+.theme-btn:hover,.proj-btn:hover,.sound-btn:hover,.qr-btn:hover{opacity:1;}
+.qr-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;}
+.qr-overlay.open{display:flex;}
+.qr-box{background:#1C2833;border-radius:16px;padding:24px;text-align:center;max-width:280px;width:90%;}
+.qr-box img{width:200px;height:200px;border-radius:8px;background:#fff;padding:6px;}
+.qr-url{font-size:11px;color:rgba(255,255,255,0.4);margin-top:10px;word-break:break-all;}
+.qr-close{margin-top:16px;padding:8px 24px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-size:13px;}
+body.light .qr-box{background:#F0EFE8;color:#1C2833;}
+body.light .qr-url{color:rgba(0,0,0,0.4);}
+body.light .qr-close{color:rgba(0,0,0,0.5);}
 @keyframes card-flash{0%{box-shadow:0 0 0 0 rgba(235,127,61,0.9);}40%{box-shadow:0 0 0 8px rgba(235,127,61,0.3);}100%{box-shadow:0 0 0 0 rgba(235,127,61,0);}}
 .card.flash{animation:card-flash 1.8s ease-out;}
 .new-badge{display:inline-block;font-size:10px;font-weight:700;background:#EB7F3D;color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle;animation:fade-badge 4s ease-out forwards;}
@@ -179,6 +188,7 @@ body.light .add-task-btn{border-color:rgba(0,0,0,0.15);color:rgba(0,0,0,0.3);}
   <div class="hdr-right">
     <div class="sync-badge" id="sync-badge">Statique</div>
     <br>
+    <button class="qr-btn" onclick="showQR()" title="Afficher le QR code">📱</button>
     <button class="sound-btn" onclick="toggleSound()" id="sound-btn" title="Sons de notification">🔔</button>
     <button class="proj-btn" onclick="toggleProjection()" id="proj-btn" title="Mode projection">🖥️</button>
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Changer le theme">🌙</button>
@@ -213,6 +223,15 @@ body.light .add-task-btn{border-color:rgba(0,0,0,0.15);color:rgba(0,0,0,0.3);}
     <button class="filter-btn" id="filter-mine" style="display:none;border-color:#8BC6F1;color:#8BC6F1;" onclick="setFilter('mine',this)">Mes chantiers</button>
   </div>
   <div id="board"></div>
+</div>
+
+<div class="qr-overlay" id="qr-overlay" onclick="closeQR()">
+  <div class="qr-box" onclick="event.stopPropagation()">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px;color:#EB7F3D;">Scanner pour ouvrir le dashboard</div>
+    <img id="qr-img" src="" alt="QR Code">
+    <div class="qr-url" id="qr-url"></div>
+    <button class="qr-close" onclick="closeQR()">Fermer</button>
+  </div>
 </div>
 
 <div class="celebrate" id="celebrate">
@@ -376,6 +395,20 @@ function releaseTask(id){
     state[id].n='';
     save();render();
   });
+}
+
+function showQR(){
+  var url=window.location.href.split('?')[0];
+  var img=document.getElementById('qr-img');
+  var lbl=document.getElementById('qr-url');
+  if(img)img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(url);
+  if(lbl)lbl.textContent=url;
+  var ov=document.getElementById('qr-overlay');
+  if(ov)ov.classList.add('open');
+}
+function closeQR(){
+  var ov=document.getElementById('qr-overlay');
+  if(ov)ov.classList.remove('open');
 }
 
 function toggleProjection(){
