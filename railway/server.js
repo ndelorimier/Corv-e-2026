@@ -15,29 +15,29 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const DEFAULT_TASKS = [
   {p:'a1', s:'Priorite A1 — Entree du site', tasks:[
-    {id:'c1', nom:"Cabane d'accueil — Appret + blanc + toiture rouge", team:'3-4 adultes'},
-    {id:'c2', nom:'Toilettes Bayou — Grattage + peinture blanche', team:'2-3 adultes'},
-    {id:'c3', nom:'Terrain entree — Ratelage et plates-bandes', team:'4-6 personnes'},
-    {id:'c4', nom:"Balayage des cotes — Abrasifs d'hiver", team:'2-4 personnes'},
+    {id:'c1', nom:"Cabane d'accueil — Appret + blanc + toiture rouge", team:'3-4 adultes', type:'peinture'},
+    {id:'c2', nom:'Toilettes Bayou — Grattage + peinture blanche', team:'2-3 adultes', type:'peinture'},
+    {id:'c3', nom:'Terrain entree — Ratelage et plates-bandes', team:'4-6 personnes', type:'jardinage'},
+    {id:'c4', nom:"Balayage des cotes — Abrasifs d'hiver", team:'2-4 personnes', type:'nettoyage'},
   ]},
   {p:'a2', s:'Priorite A2 — Visible par les clients', tasks:[
-    {id:'c5', nom:'Amiraute — Murs blancs ext. (GRAND chantier)', team:'5-6 adultes'},
-    {id:'c6', nom:'Ptit Bob — Toiture de tole rouge', team:'2-3 adultes'},
-    {id:'c7', nom:'Balcons Wigwam et Kibbutz — Peinture grise', team:'3-4 adultes'},
-    {id:'c8', nom:'Fourmilliere — Portes rouge ext. + blanc int.', team:'2-3 adultes'},
-    {id:'c9', nom:'Cafeteria — Portes ext. et int.', team:'1-2 adultes'},
+    {id:'c5', nom:'Amiraute — Murs blancs ext. (GRAND chantier)', team:'5-6 adultes', type:'peinture'},
+    {id:'c6', nom:'Ptit Bob — Toiture de tole rouge', team:'2-3 adultes', type:'peinture'},
+    {id:'c7', nom:'Balcons Wigwam et Kibbutz — Peinture grise', team:'3-4 adultes', type:'peinture'},
+    {id:'c8', nom:'Fourmilliere — Portes rouge ext. + blanc int.', team:'2-3 adultes', type:'peinture'},
+    {id:'c9', nom:'Cafeteria — Portes ext. et int.', team:'1-2 adultes', type:'peinture'},
   ]},
   {p:'b', s:'Priorite B — Operationnel', tasks:[
-    {id:'c10', nom:"Mise a l'eau des quais", team:'4-6 adultes'},
-    {id:'c11', nom:'Cafeteria — Recurage du plancher', team:'1-2 adultes'},
-    {id:'c12', nom:'Dortoirs — Montage des nouveaux lits', team:'2-4 personnes'},
-    {id:'c13', nom:'Jardins — Ouverture de saison', team:'2-3 personnes'},
-    {id:'c14', nom:'Tentes prospecteurs — Montage structures', team:'2-4 adultes'},
-    {id:'c15', nom:'Conteneur 40 verges — Remplissage', team:'3-4 adultes'},
-    {id:'c16', nom:'Erabliere — Fin du desentillage', team:'2 personnes'},
-    {id:'c17', nom:'Sentiers — Paillis au Kubota', team:'1-2 personnes'},
-    {id:'c18', nom:'Cabane a sucre — Trim fenetres rouge', team:'1-2 adultes'},
-    {id:'c19', nom:"Filet de tir a l'arc — Reparation", team:'1-2 adultes'},
+    {id:'c10', nom:"Mise a l'eau des quais", team:'4-6 adultes', type:'montage'},
+    {id:'c11', nom:'Cafeteria — Recurage du plancher', team:'1-2 adultes', type:'nettoyage'},
+    {id:'c12', nom:'Dortoirs — Montage des nouveaux lits', team:'2-4 personnes', type:'montage'},
+    {id:'c13', nom:'Jardins — Ouverture de saison', team:'2-3 personnes', type:'jardinage'},
+    {id:'c14', nom:'Tentes prospecteurs — Montage structures', team:'2-4 adultes', type:'montage'},
+    {id:'c15', nom:'Conteneur 40 verges — Remplissage', team:'3-4 adultes', type:'manutention'},
+    {id:'c16', nom:'Erabliere — Fin du desentillage', team:'2 personnes', type:'jardinage'},
+    {id:'c17', nom:'Sentiers — Paillis au Kubota', team:'1-2 personnes', type:'jardinage'},
+    {id:'c18', nom:'Cabane a sucre — Trim fenetres rouge', team:'1-2 adultes', type:'peinture'},
+    {id:'c19', nom:"Filet de tir a l'arc — Reparation", team:'1-2 adultes', type:'reparation'},
   ]}
 ];
 
@@ -134,6 +134,27 @@ app.post('/api/release', (req, res) => {
   state[id].n = '';
   saveState(state);
   res.json({ ok: true, state });
+});
+
+app.post('/api/subtask', (req, res) => {
+  const { id, done } = req.body;
+  if (!id) return res.status(400).json({ error: 'id requis' });
+  const valid = taskDefs.some(s => s.tasks.some(t => (t.subtasks||[]).some(st => st.id === id)));
+  if (!valid) return res.status(400).json({ error: 'Sous-tache inconnue' });
+  if (!state[id]) state[id] = {};
+  state[id].done = !!done;
+  saveState(state);
+  res.json({ ok: true, state });
+});
+
+app.post('/api/broadcast', (req, res) => {
+  const { pin, msg } = req.body;
+  if (pin !== PIN) return res.status(403).json({ error: 'Code incorrect' });
+  if (!state._broadcast) state._broadcast = {};
+  state._broadcast.msg = (msg || '').trim().substring(0, 200);
+  state._broadcast.ts = Date.now();
+  saveState(state);
+  res.json({ ok: true });
 });
 
 app.post('/api/reset', (req, res) => {
