@@ -136,6 +136,28 @@ app.post('/api/release', (req, res) => {
   res.json({ ok: true, state });
 });
 
+app.post('/api/join', (req, res) => {
+  const { id, name } = req.body;
+  if (!id || !name || !name.trim()) return res.status(400).json({ error: 'id et name requis' });
+  if (!getTaskIds().includes(id)) return res.status(400).json({ error: 'Tache inconnue' });
+  if (!state[id]) state[id] = { s: 'a-faire', n: '' };
+  if (state[id].s !== 'en-cours') return res.status(409).json({ error: 'Tache non en cours' });
+  if (!state[id].extras) state[id].extras = [];
+  const trimmed = name.trim();
+  if (!state[id].extras.includes(trimmed)) state[id].extras.push(trimmed);
+  saveState(state);
+  res.json({ ok: true, state });
+});
+
+app.post('/api/leave', (req, res) => {
+  const { id, name } = req.body;
+  if (!getTaskIds().includes(id)) return res.status(400).json({ error: 'Tache inconnue' });
+  if (!state[id]) return res.json({ ok: true, state });
+  if (state[id].extras) state[id].extras = state[id].extras.filter(n => n !== (name||'').trim());
+  saveState(state);
+  res.json({ ok: true, state });
+});
+
 app.post('/api/subtask', (req, res) => {
   const { id, done } = req.body;
   if (!id) return res.status(400).json({ error: 'id requis' });
