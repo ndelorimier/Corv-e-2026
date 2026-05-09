@@ -432,7 +432,7 @@ body.light .eod-sec-title{color:rgba(0,0,0,0.4);}
 // Si utilise en fichier standalone : mettre l'URL Railway ici
 // Ex: var API_URL = 'https://corvee-bruchesi.up.railway.app';
 var API_URL = '';
-var POLL_MS = 10000; // refresh toutes les 10 secondes
+var POLL_MS = 15000; // refresh toutes les 15 secondes
 // ──────────────────────────────────────────────────────────────────────────────
 
 var DATA=[];
@@ -683,7 +683,7 @@ function detectChanges(newState){
       recentChanges[id]=Date.now()+4000;
       if(curr==='en-cours')playSound('claim');
       if(curr==='termine')playSound('complete');
-      render();
+      if(!hasOpenInteraction())render();
       setTimeout(function(){
         var card=document.getElementById('card-'+id);
         if(card){card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash');}
@@ -1103,11 +1103,25 @@ function setNm(id,v){
   }
 }
 
+function hasOpenInteraction(){
+  if(document.querySelector('.claim-form.open,.join-form.open,.edit-panel.open'))return true;
+  var ae=document.activeElement;
+  if(!ae||ae===document.body||ae===document.documentElement)return false;
+  var tag=ae.tagName.toLowerCase();
+  return tag==='input'||tag==='textarea'||tag==='select';
+}
+
 function fetchState(){
   fetch(apiBase()+'/api/state?t='+Date.now())
     .then(r=>r.json())
     .then(function(data){
-      if(data.state){detectChanges(data.state);state=data.state;save();render();checkBroadcast(data.state);}
+      if(data.state){
+        detectChanges(data.state);
+        state=data.state;
+        save();
+        if(!hasOpenInteraction())render();
+        checkBroadcast(data.state);
+      }
       setBadge('live');
       if(lbOpen)renderLeaderboard();
     })
