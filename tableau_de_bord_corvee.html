@@ -688,7 +688,7 @@ function detectChanges(newState){
         var card=document.getElementById('card-'+id);
         if(card){card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash');}
       },30);
-      setTimeout(function(){delete recentChanges[id];render();},4500);
+      setTimeout(function(){delete recentChanges[id];if(!hasOpenInteraction())render();},4500);
     }
   });
   prevState=JSON.parse(JSON.stringify(newState));
