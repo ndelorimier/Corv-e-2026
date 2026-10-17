@@ -133,12 +133,38 @@ function checkPin(req, res) {
   res.status(403).json({ error: 'Code incorrect' });
   return false;
 }
-const TASK_FIELDS = { nom: 120, team: 40, type: 30, details: 1000 };
+const TASK_FIELDS = { nom: 120, team: 40, type: 30, details: 1000, lieu: 80, materiel: 200 };
+const OPTIONAL_FIELDS = ['details', 'lieu', 'materiel'];
+const MAX_SUBTASKS = 30;
+// Etapes : [{id,nom}] ; les ids doivent rester uniques dans toute la liste.
+function cleanSubtasks(list, task) {
+  if (!Array.isArray(list)) return [];
+  const taken = new Set();
+  taskDefs.forEach(sec => (sec.tasks || []).forEach(t => {
+    taken.add(t.id);
+    if (t !== task) (t.subtasks || []).forEach(st => taken.add(st.id));
+  }));
+  const out = [];
+  for (const raw of list.slice(0, MAX_SUBTASKS)) {
+    const id = clean(raw && raw.id, 60), nom = clean(raw && raw.nom, 200);
+    if (!nom || !/^[A-Za-z0-9_-]+$/.test(id) || taken.has(id)) continue;
+    taken.add(id);
+    out.push({ id, nom });
+  }
+  return out;
+}
 function applyFields(task, body) {
   for (const [k, max] of Object.entries(TASK_FIELDS)) {
     if (!(k in body)) continue;
     const v = clean(body[k], max);
-    if (k === 'details' && !v) delete task.details; else task[k] = v;
+    if (OPTIONAL_FIELDS.includes(k) && !v) delete task[k]; else task[k] = v;
+  }
+  if ('subtasks' in body) {
+    const old = task.subtasks || [];
+    const next = cleanSubtasks(body.subtasks, task);
+    old.forEach(st => { if (!next.some(n => n.id === st.id)) delete state[st.id]; });
+    if (next.length) task.subtasks = next; else delete task.subtasks;
+    saveState(state);
   }
 }
 // Enregistre la liste, fait avancer tasksVersion (strictement) et repond.

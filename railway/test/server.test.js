@@ -175,3 +175,31 @@ test('le code QR est genere localement, sans service externe', async () => {
   assert.ok(!page.includes('api.qrserver.com'));
   assert.ok(page.includes('vendor/qrcode.js'));
 });
+
+test('lieu, materiel et etapes (subtasks) sont conserves et les etapes se cochent', async () => {
+  const r = await post('/api/sections/a1/tasks', {
+    pin: '9999', nom: 'T', team: '2', lieu: 'Plage', materiel: 'Kubota',
+    subtasks: [{ id: 'tst_s1', nom: 'A' }, { id: 'tst_s2', nom: 'B' }],
+  });
+  assert.strictEqual(r.status, 200);
+  const t = (await allTasks()).find(x => x.nom === 'T');
+  assert.strictEqual(t.lieu, 'Plage');
+  assert.strictEqual(t.materiel, 'Kubota');
+  assert.deepStrictEqual(t.subtasks, [{ id: 'tst_s1', nom: 'A' }, { id: 'tst_s2', nom: 'B' }]);
+
+  const c = await post('/api/subtask', { id: 'tst_s1', done: true });
+  assert.strictEqual(c.status, 200);
+  assert.strictEqual((await c.json()).state.tst_s1.done, true);
+  assert.strictEqual((await post('/api/subtask', { id: 'inconnu', done: true })).status, 400);
+
+  // modifier : une etape conservee garde son etat, une etape retiree perd le sien
+  const u = await send('PUT', '/api/tasks/' + t.id, { pin: '9999', lieu: '', subtasks: [{ id: 'tst_s1', nom: 'A' }] });
+  assert.strictEqual(u.status, 200);
+  const t2 = (await allTasks()).find(x => x.id === t.id);
+  assert.strictEqual(t2.lieu, undefined);
+  assert.strictEqual(t2.materiel, 'Kubota');
+  assert.deepStrictEqual(t2.subtasks, [{ id: 'tst_s1', nom: 'A' }]);
+  const st = (await (await fetch(base + '/api/state')).json()).state;
+  assert.strictEqual(st.tst_s1.done, true);
+  assert.strictEqual(st.tst_s2, undefined);
+});
