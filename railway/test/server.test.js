@@ -22,6 +22,12 @@ const post = (p, body) => fetch(base + p, {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
 });
 
+const send = (method, p, body) => fetch(base + p, {
+  method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}),
+});
+const version = async () => (await (await fetch(base + '/api/state')).json()).tasksVersion;
+const allTasks = async () => (await (await fetch(base + '/api/tasks')).json()).tasks.flatMap(s => s.tasks);
+
 test('config expose le titre, la date et l\'heure de l\'evenement', async () => {
   const d = await (await fetch(base + '/api/config')).json();
   assert.deepStrictEqual(d.event, { titre: "Corvée d'automne 2026", date: '17 octobre', heure: '9h00' });
@@ -39,20 +45,75 @@ test('les taches d\'automne sont chargees depuis la graine', async () => {
   assert.ok(!noms.some(n => /Mise a l'eau/i.test(n)), 'pas de taches du printemps');
 });
 
-test('modifier les taches change tasksVersion dans /api/state', async () => {
-  const v1 = (await (await fetch(base + '/api/state')).json()).tasksVersion;
-  await new Promise(r => setTimeout(r, 5));
-  const { tasks } = await (await fetch(base + '/api/tasks')).json();
-  tasks[0].tasks.push({ id: 'tnew', nom: 'Nouvelle', team: '2', type: 'rangement' });
-  assert.strictEqual((await post('/api/tasks', { pin: '9999', tasks })).status, 200);
-  const v2 = (await (await fetch(base + '/api/state')).json()).tasksVersion;
-  assert.ok(v2 > v1);
-  assert.strictEqual((await post('/api/claim', { id: 'tnew', name: 'Spout' })).status, 200);
+test('POST /api/tasks (remplacement de toute la liste) n\'existe plus', async () => {
+  assert.strictEqual((await post('/api/tasks', { pin: '9999', tasks: [] })).status, 404);
+});
+
+test('ajouter un chantier dans une section', async () => {
+  const v1 = await version();
+  assert.strictEqual((await post('/api/sections/a1/tasks', { pin: 'x', nom: 'X' })).status, 403);
+  assert.strictEqual((await post('/api/sections/zz/tasks', { pin: '9999', nom: 'X' })).status, 404);
+  assert.strictEqual((await post('/api/sections/a1/tasks', { pin: '9999', nom: '  ' })).status, 400);
+  const r = await post('/api/sections/a1/tasks', { pin: '9999', nom: ' Nouvelle ', team: '2', type: 'rangement' });
+  assert.strictEqual(r.status, 200);
+  const d = await r.json();
+  assert.ok(d.task.id, 'le serveur attribue un id');
+  assert.strictEqual(d.task.nom, 'Nouvelle');
+  assert.ok(d.tasksVersion > v1);
+  assert.strictEqual(d.tasks.find(s => s.p === 'a1').tasks.at(-1).id, d.task.id);
+  assert.strictEqual(await version(), d.tasksVersion);
+  assert.strictEqual((await post('/api/claim', { id: d.task.id, name: 'Spout' })).status, 200);
+});
+
+test('modifier un chantier ne touche que les champs envoyes', async () => {
+  const before = (await allTasks()).find(t => t.id === 'f7');
+  const v1 = await version();
+  assert.strictEqual((await send('PUT', '/api/tasks/f7', { pin: 'x', nom: 'X' })).status, 403);
+  assert.strictEqual((await send('PUT', '/api/tasks/nope', { pin: '9999', nom: 'X' })).status, 404);
+  assert.strictEqual((await send('PUT', '/api/tasks/f7', { pin: '9999', nom: '' })).status, 400);
+  const r = await send('PUT', '/api/tasks/f7', { pin: '9999', team: '7 adultes', details: '' });
+  assert.strictEqual(r.status, 200);
+  const d = await r.json();
+  assert.ok(d.tasksVersion > v1);
+  assert.strictEqual(d.task.team, '7 adultes');
+  assert.strictEqual(d.task.nom, before.nom);
+  assert.strictEqual(d.task.type, before.type);
+  assert.ok(!('details' in d.task), 'details vide = retire');
+});
+
+test('deplacer un chantier vers une autre section', async () => {
+  assert.strictEqual((await send('PUT', '/api/tasks/f12', { pin: '9999', p: 'zz' })).status, 400);
+  const d = await (await send('PUT', '/api/tasks/f12', { pin: '9999', p: 'a1' })).json();
+  assert.ok(d.tasks.find(s => s.p === 'a1').tasks.some(t => t.id === 'f12'));
+  assert.ok(!d.tasks.find(s => s.p === 'b').tasks.some(t => t.id === 'f12'));
+});
+
+test('deux coordonnateurs qui modifient deux chantiers ne s\'ecrasent pas', async () => {
+  await Promise.all([
+    send('PUT', '/api/tasks/f5', { pin: '9999', nom: 'Renomme par Ana' }),
+    send('PUT', '/api/tasks/f6', { pin: '9999', team: '9 adultes' }),
+  ]);
+  const all = await allTasks();
+  assert.strictEqual(all.find(t => t.id === 'f5').nom, 'Renomme par Ana');
+  assert.strictEqual(all.find(t => t.id === 'f6').team, '9 adultes');
+});
+
+test('supprimer un chantier le retire avec son etat', async () => {
+  await post('/api/claim', { id: 'f13', name: 'Gus' });
+  assert.strictEqual((await send('DELETE', '/api/tasks/f13', { pin: 'x' })).status, 403);
+  const v1 = await version();
+  const r = await send('DELETE', '/api/tasks/f13', { pin: '9999' });
+  assert.strictEqual(r.status, 200);
+  assert.ok((await r.json()).tasksVersion > v1);
+  assert.ok(!(await allTasks()).some(t => t.id === 'f13'));
+  assert.ok(!('f13' in (await (await fetch(base + '/api/state')).json()).state));
+  assert.strictEqual((await send('DELETE', '/api/tasks/f13', { pin: '9999' })).status, 404);
+  assert.strictEqual((await post('/api/claim', { id: 'f13', name: 'Gus' })).status, 400);
 });
 
 test('/api/state refuse un champ ou une tache inconnus', async () => {
   assert.strictEqual((await post('/api/state', { pin: '9999', id: '__proto__', field: 's', value: 'x' })).status, 400);
-  assert.strictEqual((await post('/api/state', { pin: '9999', id: 'tnew', field: 'evil', value: 'x' })).status, 400);
+  assert.strictEqual((await post('/api/state', { pin: '9999', id: 'f1', field: 'evil', value: 'x' })).status, 400);
 });
 
 test('liste de benevoles protegee par le code', async () => {

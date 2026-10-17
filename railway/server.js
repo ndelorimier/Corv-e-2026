@@ -113,14 +113,82 @@ app.get('/api/tasks', (req, res) => {
   res.json({ tasks: taskDefs });
 });
 
-app.post('/api/tasks', (req, res) => {
-  const { pin, tasks } = req.body;
-  if (pin !== PIN) return res.status(403).json({ error: 'Code incorrect' });
-  if (!Array.isArray(tasks)) return res.status(400).json({ error: 'Format invalide' });
-  taskDefs = tasks;
+const clean = (v, max) => String(v == null ? '' : v).trim().substring(0, max);
+function newId(prefix, taken) {
+  let id;
+  do { id = prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); } while (taken.includes(id));
+  return id;
+}
+function findTask(id) {
+  for (const sec of taskDefs) {
+    const i = (sec.tasks || []).findIndex(t => t.id === id);
+    if (i >= 0) return { sec, i, task: sec.tasks[i] };
+  }
+  return null;
+}
+function findSection(p) { return taskDefs.find(s => s.p === p) || null; }
+function checkPin(req, res) {
+  if ((req.body || {}).pin === PIN) return true;
+  res.status(403).json({ error: 'Code incorrect' });
+  return false;
+}
+const TASK_FIELDS = { nom: 120, team: 40, type: 30, details: 1000 };
+function applyFields(task, body) {
+  for (const [k, max] of Object.entries(TASK_FIELDS)) {
+    if (!(k in body)) continue;
+    const v = clean(body[k], max);
+    if (k === 'details' && !v) delete task.details; else task[k] = v;
+  }
+}
+// Enregistre la liste, fait avancer tasksVersion (strictement) et repond.
+function tasksChanged(res, extra) {
   saveTasks(taskDefs);
-  tasksVersion = Date.now();
-  res.json({ ok: true, tasks: taskDefs });
+  tasksVersion = Math.max(Date.now(), tasksVersion + 1);
+  res.json({ ok: true, tasks: taskDefs, tasksVersion, ...extra });
+}
+
+app.post('/api/sections/:p/tasks', (req, res) => {
+  if (!checkPin(req, res)) return;
+  const sec = findSection(req.params.p);
+  if (!sec) return res.status(404).json({ error: 'Section inconnue' });
+  const body = req.body || {};
+  if (!clean(body.nom, TASK_FIELDS.nom)) return res.status(400).json({ error: 'Nom requis' });
+  const task = { id: newId('t', getTaskIds()), nom: '', team: '', type: '' };
+  applyFields(task, body);
+  (sec.tasks = sec.tasks || []).push(task);
+  state[task.id] = { s: 'a-faire', n: '' };
+  saveState(state);
+  tasksChanged(res, { task });
+});
+
+app.put('/api/tasks/:id', (req, res) => {
+  if (!checkPin(req, res)) return;
+  const found = findTask(req.params.id);
+  if (!found) return res.status(404).json({ error: 'Tache inconnue' });
+  const body = req.body || {};
+  if ('nom' in body && !clean(body.nom, TASK_FIELDS.nom)) return res.status(400).json({ error: 'Nom requis' });
+  let dest = null;
+  if (body.p !== undefined && body.p !== found.sec.p) {
+    dest = findSection(body.p);
+    if (!dest) return res.status(400).json({ error: 'Section inconnue' });
+  }
+  applyFields(found.task, body);
+  if (dest) {
+    found.sec.tasks.splice(found.i, 1);
+    (dest.tasks = dest.tasks || []).push(found.task);
+  }
+  tasksChanged(res, { task: found.task });
+});
+
+app.delete('/api/tasks/:id', (req, res) => {
+  if (!checkPin(req, res)) return;
+  const found = findTask(req.params.id);
+  if (!found) return res.status(404).json({ error: 'Tache inconnue' });
+  found.sec.tasks.splice(found.i, 1);
+  delete state[found.task.id];
+  (found.task.subtasks || []).forEach(st => { delete state[st.id]; });
+  saveState(state);
+  tasksChanged(res);
 });
 
 // ── Etat des taches ──────────────────────────────────────────────────────────
