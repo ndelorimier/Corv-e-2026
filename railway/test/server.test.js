@@ -149,3 +149,20 @@ test('liberer puis reprendre un chantier repart sans anciens equipiers', async (
   const d = await (await post('/api/claim', { id: 'f4', name: 'Fox' })).json();
   assert.deepStrictEqual(d.state.f4.extras, []);
 });
+
+test('ajouter puis renommer une section', async () => {
+  assert.strictEqual((await post('/api/sections', { pin: 'x', s: 'C' })).status, 403);
+  assert.strictEqual((await post('/api/sections', { pin: '9999', s: ' ' })).status, 400);
+  const v1 = await version();
+  const d = await (await post('/api/sections', { pin: '9999', s: 'Priorité C — Si le temps le permet' })).json();
+  assert.ok(d.section.p);
+  assert.deepStrictEqual(d.section.tasks, []);
+  assert.ok(d.tasksVersion > v1);
+  assert.strictEqual(d.tasks.at(-1).p, d.section.p);
+  const p = d.section.p;
+  assert.strictEqual((await send('PUT', '/api/sections/zz', { pin: '9999', s: 'X' })).status, 404);
+  assert.strictEqual((await send('PUT', '/api/sections/' + p, { pin: '9999', s: '' })).status, 400);
+  const d2 = await (await send('PUT', '/api/sections/' + p, { pin: '9999', s: 'Priorité C — Bonus' })).json();
+  assert.strictEqual(d2.tasks.find(s => s.p === p).s, 'Priorité C — Bonus');
+  assert.strictEqual((await post('/api/sections/' + p + '/tasks', { pin: '9999', nom: 'Bonus' })).status, 200);
+});

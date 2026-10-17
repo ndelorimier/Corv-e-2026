@@ -191,6 +191,25 @@ app.delete('/api/tasks/:id', (req, res) => {
   tasksChanged(res);
 });
 
+app.post('/api/sections', (req, res) => {
+  if (!checkPin(req, res)) return;
+  const s = clean((req.body || {}).s, 80);
+  if (!s) return res.status(400).json({ error: 'Nom requis' });
+  const section = { p: newId('s', taskDefs.map(x => x.p)), s, tasks: [] };
+  taskDefs.push(section);
+  tasksChanged(res, { section });
+});
+
+app.put('/api/sections/:p', (req, res) => {
+  if (!checkPin(req, res)) return;
+  const sec = findSection(req.params.p);
+  if (!sec) return res.status(404).json({ error: 'Section inconnue' });
+  const s = clean((req.body || {}).s, 80);
+  if (!s) return res.status(400).json({ error: 'Nom requis' });
+  sec.s = s;
+  tasksChanged(res, { section: sec });
+});
+
 // ── Etat des taches ──────────────────────────────────────────────────────────
 
 app.get('/api/state', (req, res) => {
