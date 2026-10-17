@@ -858,7 +858,7 @@ function openPrint(){
 
   var tasksHtml='';
   DATA.forEach(function(sec){
-    tasksHtml+='<div class="sec-block"><div class="sec-hdr" style="background:'+secColors[sec.p]+'">'+sec.s+'</div><div class="tasks-grid">';
+    tasksHtml+='<div class="sec-block"><div class="sec-hdr" style="background:'+secColors[sec.p]+'">'+esc(sec.s)+'</div><div class="tasks-grid">';
     sec.tasks.forEach(function(t){
       var v=gS(t.id),nm=gN(t.id),note=gNote(t.id);
       var stTxt=v==='a-faire'?'Disponible':(v==='en-cours'?'En cours':'Terminé');
@@ -869,11 +869,11 @@ function openPrint(){
       var pctSubs=hasSubs?Math.round(doneSubs/t.subtasks.length*100):0;
 
       tasksHtml+='<div class="task-card st-'+v+'">';
-      tasksHtml+='<div class="task-top"><div class="task-nom">'+t.nom+'</div><div class="task-team">'+t.team+'</div></div>';
+      tasksHtml+='<div class="task-top"><div class="task-nom">'+esc(t.nom)+'</div><div class="task-team">'+esc(t.team)+'</div></div>';
       tasksHtml+='<div class="task-tags">';
       if(t.type&&typeLabels[t.type])tasksHtml+='<span class="tag-type">'+typeLabels[t.type]+'</span>';
       tasksHtml+='<span class="tag-st" style="color:'+stColor+';background:'+stBg+'">'+stTxt+'</span>';
-      if(nm)tasksHtml+='<span class="tag-name">👤 '+nm+'</span>';
+      if(nm)tasksHtml+='<span class="tag-name">👤 '+esc(nm)+'</span>';
       tasksHtml+='</div>';
       if(t.details)tasksHtml+='<div class="task-details">'+t.details.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';
       if(hasSubs){
@@ -882,7 +882,7 @@ function openPrint(){
         tasksHtml+='<ul class="st-ul">';
         t.subtasks.forEach(function(st){
           var d=gSubDone(st.id);
-          tasksHtml+='<li class="st-li'+(d?' done':'')+'"><span>'+(d?'☑':'☐')+'</span>'+st.nom+'</li>';
+          tasksHtml+='<li class="st-li'+(d?' done':'')+'"><span>'+(d?'☑':'☐')+'</span>'+esc(st.nom)+'</li>';
         });
         tasksHtml+='</ul></div>';
       }
@@ -1002,11 +1002,12 @@ function buildLeaderboard(){
   var scores={};
   Object.keys(state).forEach(function(id){
     if(id.startsWith('_'))return;
-    var s=state[id];if(!s||!s.n)return;
-    var name=s.n.trim();if(!name)return;
-    if(!scores[name])scores[name]={done:0,claimed:0};
-    if(s.s==='termine')scores[name].done++;
-    else if(s.s==='en-cours')scores[name].claimed++;
+    var s=state[id];if(!s||s.s==='a-faire')return;
+    [s.n].concat(s.extras||[]).forEach(function(raw){
+      var name=(raw||'').trim();if(!name)return;
+      if(!scores[name])scores[name]={done:0,claimed:0};
+      if(s.s==='termine')scores[name].done++;else scores[name].claimed++;
+    });
   });
   return Object.keys(scores).map(function(n){
     return{name:n,done:scores[n].done,claimed:scores[n].claimed,total:scores[n].done+scores[n].claimed};
@@ -1021,7 +1022,7 @@ function renderLeaderboard(){
     return'<div class="lb-row">'+
       '<div class="lb-rank">'+(medals[i]||i+1+'.')+'</div>'+
       '<div class="lb-info">'+
-        '<div class="lb-name">'+r.name+'</div>'+
+        '<div class="lb-name">'+esc(r.name)+'</div>'+
         (r.claimed?'<div class="lb-sub">'+r.claimed+' en cours</div>':'')+'</div>'+
       '<div class="lb-done">'+r.done+'</div>'+
     '</div>';
@@ -1051,7 +1052,7 @@ function showEOD(){
     :lbRows.slice(0,10).map(function(r,i){
       return'<div class="eod-lb-row">'+
         '<div class="eod-lb-medal">'+(medals[i]||'')+'</div>'+
-        '<div style="flex:1"><div class="eod-lb-name">'+r.name+'</div>'+
+        '<div style="flex:1"><div class="eod-lb-name">'+esc(r.name)+'</div>'+
         '<div class="eod-lb-sub">'+r.total+' chantier'+(r.total>1?'s':'')+' &mdash; '+r.done+' termin&eacute;'+(r.done>1?'s':'')+(r.claimed?' &middot; '+r.claimed+' en cours':'')+'</div></div>'+
         '<div class="eod-lb-count">'+r.done+'</div>'+
       '</div>';
@@ -1232,22 +1233,23 @@ function render(){
   DATA.forEach(function(section){
     var vis=section.tasks.filter(function(t){
       var v=gS(t.id),nm=gN(t.id).toLowerCase();
-      var mq=!q||(t.nom.toLowerCase().includes(q)||nm.includes(q));
+      var mq=!q||(t.nom.toLowerCase().includes(q)||nm.includes(q)||gExtras(t.id).join(' ').toLowerCase().includes(q));
       return mq&&(f=='tous'||v===f);
     });
     var dotCls='d-'+section.p;
-    html+='<div class="section-hdr"><div class="s-dot '+dotCls+'"></div>'+section.s+'</div>';
+    html+='<div class="section-hdr"><div class="s-dot '+dotCls+'"></div>'+esc(section.s)+'</div>';
     if(!vis.length&&f==='tous'&&!q){}
     section.tasks.forEach(function(t){
       var v=gS(t.id),nm=gN(t.id);
-      var mq=!q||(t.nom.toLowerCase().includes(q)||nm.toLowerCase().includes(q));
-      var isMine=myName&&nm.toLowerCase().includes(myName.toLowerCase());
+      var mq=!q||(t.nom.toLowerCase().includes(q)||nm.toLowerCase().includes(q)||gExtras(t.id).join(' ').toLowerCase().includes(q));
+      var team=[nm].concat(gExtras(t.id)).map(function(x){return x.trim().toLowerCase();});
+      var isMine=!!myName&&team.indexOf(myName.toLowerCase())>=0;
       var mf=f==='tous'||v===f||(f==='mine'&&isMine);
       var mt=!typeFilter||t.type===typeFilter;
       var hid=(!mq||!mf||!mt)?'hide':'';
       var hl=(q&&mq&&mf)?'hl':'';
       var mineClass=isMine?'mine':'';
-      var nameHtml=nm?('<span class="card-name">'+nm+'</span>'):('<span class="card-name empty">Non assigne</span>');
+      var nameHtml=nm?('<span class="card-name">'+esc(nm)+'</span>'):('<span class="card-name empty">Non assigne</span>');
       var extras=gExtras(t.id);
       var teamMax=parseTeamMax(t.team);
       var assignedCount=v==='a-faire'?0:1+extras.length;
@@ -1283,7 +1285,6 @@ function render(){
           (note?'✏️ Modifier la note':'+ Ajouter une note')+
         '</button>'+
         '</div>';
-      var esc=function(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');};
       var editPanel='<div class="edit-panel" id="ep-'+t.id+'">'+
         '<div class="edit-row"><span class="edit-lbl">Nom</span>'+
         '<input class="edit-inp" id="ei-nom-'+t.id+'" value="'+esc(t.nom)+'" placeholder="Nom du chantier..." '+
@@ -1292,7 +1293,7 @@ function render(){
         '<input class="edit-inp" id="ei-team-'+t.id+'" value="'+esc(t.team)+'" placeholder="ex: 2-3 adultes">'+
         '<span class="edit-lbl" style="width:auto;margin-left:8px;">Section</span>'+
         '<select class="edit-sel" id="ei-sec-'+t.id+'">'+
-        DATA.map(function(sec){return'<option value="'+sec.p+'"'+(sec.tasks.some(function(x){return x.id===t.id;})?'selected':'')+'>'+sec.s+'</option>';}).join('')+
+        DATA.map(function(sec){return'<option value="'+sec.p+'"'+(sec.tasks.some(function(x){return x.id===t.id;})?'selected':'')+'>'+esc(sec.s)+'</option>';}).join('')+
         '</select></div>'+
         '<div class="edit-row"><span class="edit-lbl">Type</span>'+
         '<select class="edit-sel" id="ei-type-'+t.id+'">'+
@@ -1308,21 +1309,21 @@ function render(){
         '</div></div>';
       html+='<div id="card-'+t.id+'" class="card '+v+' '+hid+' '+hl+' '+mineClass+'">'+
         '<div class="card-top">'+
-        '<div class="card-nom">'+t.nom+newBadge+'</div>'+
+        '<div class="card-nom">'+esc(t.nom)+newBadge+'</div>'+
         '<button class="edit-icon-btn" onclick="openEditPanel(\''+t.id+'\')" title="Modifier">✏️</button>'+
-        '<div class="card-team '+teamCls+'">'+t.team+teamCount+'</div>'+
+        '<div class="card-team '+teamCls+'">'+esc(t.team)+teamCount+'</div>'+
         '</div>'+
         '<div class="card-bottom">'+
         '<div class="'+cls(v)+' card-status">'+lbl(v)+'</div>'+
         nameHtml+
-        '<input class="coord-input" placeholder="Nom(s) benevoles" value="'+nm+'" oninput="setNm(\''+t.id+'\',this.value)">'+
+        '<input class="coord-input" placeholder="Nom(s) benevoles" value="'+esc(nm)+'" oninput="setNm(\''+t.id+'\',this.value)">'+
         btnHtml+
         releaseHtml+
         (v==='en-cours'?'<button class="join-btn" onclick="joinTask(\''+t.id+'\')">+ Se joindre</button>':'')+
         '</div>'+
         (extras.length?'<div class="extras-list">'+extras.map(function(en){
-          return'<span class="extra-chip">'+en.replace(/&/g,'&amp;')+
-            ' <button class="extra-remove" onclick="leaveTask(\''+t.id+'\',\''+en.replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'\')" title="Retirer">&#x2715;</button></span>';
+          return'<span class="extra-chip">'+esc(en)+
+            ' <button class="extra-remove" data-name="'+esc(en)+'" onclick="leaveTask(\''+t.id+'\',this.dataset.name)" title="Retirer">&#x2715;</button></span>';
         }).join('')+'</div>':'')+
         (v==='en-cours'?'<div class="join-form" id="join-form-'+t.id+'">'+
           '<input class="claim-input" id="join-input-'+t.id+'" placeholder="Ton prenom..." maxlength="40"'+
