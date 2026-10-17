@@ -649,6 +649,8 @@ Attendu : l'événement d'automne, les tâches `f1…f13` et un état vide (`a-f
 
 Chaque point aura son propre plan détaillé ; ils sont listés ici par ordre d'impact.
 
+> **État au 16 octobre 2026** (plan détaillé : `2026-10-16-phase1-apres-corvee.md`) : points 1, 3, 5, 6 et 7 faits. Point 4 fait pour les sections (ajouter, renommer) ; les types restent figés dans la page et une section ne peut pas être supprimée. Restent les points 2 et 8.
+
 1. **Une seule source de vérité.** Supprimer `tableau_de_bord_corvee.html` à la racine et la liste `DEFAULT_TASKS` dupliquée dans la page. La page n'affiche que ce que renvoie le serveur, avec un état « Hors ligne » explicite.
 2. **Découper `index.html`** (1 350 lignes) en `styles.css`, `app.js` (état et API) et `render.js` (gabarits), sans changer le comportement.
 3. **API par tâche au lieu de « remplacer toute la liste ».** `POST /api/tasks` écrase tout : deux coordonnateurs qui éditent en même temps s'écrasent mutuellement. Remplacer par `PUT /api/tasks/:id`, `POST /api/sections/:p/tasks` et `DELETE /api/tasks/:id`.

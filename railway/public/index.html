@@ -138,6 +138,8 @@ h3{margin:0;font-size:20px;font-weight:800;line-height:1.2;text-wrap:pretty;over
 .cardmenu .mi{font-weight:700}
 .addbtn{min-height:52px;width:100%;border-radius:14px;border:2px dashed var(--line);background:transparent;color:var(--muted);font-size:16px;font-weight:700;cursor:pointer}
 .addbtn:hover{border-color:#EB7F3D;color:var(--accentText)}
+.secbtn{min-height:44px;padding:0 14px;border-radius:12px;border:2px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.secbtn:hover{border-color:#EB7F3D;color:var(--accentText)}
 .empty{text-align:center;padding:40px 16px;border:2px dashed var(--line);border-radius:18px}
 .empty b{display:block;font-size:20px;font-weight:800}
 .empty span{display:block;font-size:16px;color:var(--muted);margin-top:6px}
@@ -218,6 +220,7 @@ html.soir .err{color:#FF9A93}
 <div id="app"></div>
 <div id="toast"></div>
 
+<script src="vendor/qrcode.js"></script>
 <script>
 (function(){
 'use strict';
@@ -247,7 +250,7 @@ var wakeLock=null, audioCtx=null, toastUndo=null;
 var S={
   filter:'besoin', q:'', typeFilter:'', proj:false, sound:false, theme:'clair',
   coord:false, menuOpen:false, cardMenu:null,
-  claimFor:null, claimMode:'take', noteFor:null, editFor:null,
+  claimFor:null, claimMode:'take', noteFor:null, editFor:null, secEdit:null,
   pinOpen:false, pinErr:false, qrOpen:false, lbOpen:false, eodOpen:false, dlg:null,
   myName:'', bcDismissedTs:0, celebDismissed:false,
   recent:{}, online:null, drafts:{}
@@ -257,7 +260,12 @@ var S={
 function g(id){return state[id]||{s:'a-faire',n:'',extras:[]};}
 function shortName(t){return String(t&&t.nom||'').split(' — ')[0];}
 function parseTeam(t){var m=String(t||'').match(/\d+/g);if(!m)return{min:0,max:0};return{min:+m[0],max:+m[m.length-1]};}
-function secColor(p){return SEC_COLORS[p]||'#5B7A8A';}
+var SEC_PALETTE=['#EB7F3D','#8BC6F1','#5B7A8A','#D9A441','#7FA36B'];
+function secColor(p){
+  if(SEC_COLORS[p])return SEC_COLORS[p];
+  for(var i=0;i<DATA.length;i++)if(DATA[i].p===p)return SEC_PALETTE[i%SEC_PALETTE.length];
+  return '#5B7A8A';
+}
 function secParts(sec){
   var s=String(sec.s||''),i=s.indexOf('—');
   if(i<0)return{label:s.trim(),sub:''};
@@ -309,13 +317,13 @@ function clearDrafts(prefixes){
     if(prefixes.some(function(p){return k.indexOf(p)===0;}))delete S.drafts[k];
   });
 }
-var FORM_PREFIXES=['claim-','note-','en-','et-','es-','ety-','ed-'];
+var FORM_PREFIXES=['claim-','note-','en-','et-','es-','ety-','ed-','sl-','ss-'];
 
 // ── Rendu ────────────────────────────────────────────────────────────────────
 function isDark(){return S.proj||S.theme==='soir';}
 
 function hasOpenInteraction(){
-  if(S.claimFor||S.noteFor||S.editFor||S.pinOpen||S.dlg)return true;
+  if(S.claimFor||S.noteFor||S.editFor||S.secEdit||S.pinOpen||S.dlg)return true;
   var ae=document.activeElement;
   if(!ae||ae===document.body||ae===document.documentElement)return false;
   var tag=ae.tagName.toLowerCase();
@@ -356,7 +364,17 @@ function render(){
 }
 
 function pageUrl(){return location.origin+'/';}
-function qrUrl(size){return'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&margin=0&data='+encodeURIComponent(pageUrl());}
+var qrCache={};
+function qrSrc(){
+  var u=pageUrl();
+  if(qrCache[u]===undefined){
+    try{
+      var q=window.qrcode(0,'M');q.addData(u);q.make();
+      qrCache[u]='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(q.createSvgTag({cellSize:4,margin:0,scalable:true}));
+    }catch(e){qrCache[u]='';}
+  }
+  return qrCache[u];
+}
 
 function view(){
   var dark=isDark(),me=lc(S.myName),proj=S.proj;
@@ -412,6 +430,7 @@ function view(){
     ['menu-print','Version imprimable','']
   ];
   if(S.coord)items.push(['menu-eod','Bilan de fin de journée','']);
+  if(S.coord)items.push(['menu-new','Nouvelle corvée','']);
   var menuHtml=S.menuOpen?'<div class="menu" role="menu" data-menu>'+items.map(function(m){
     return'<button class="mi" role="menuitem" data-action="'+m[0]+'"><span>'+esc(m[1])+'</span><small>'+esc(m[2])+'</small></button>';
   }).join('')+'</div>':'';
@@ -499,11 +518,18 @@ function view(){
       var sp=secParts(sec);
       var subTxt=(sp.sub?sp.sub+' · ':'')+cs.length;
       h+='<section class="sec" aria-label="'+esc(sec.s)+'"><div class="sec-h"><i style="background:'+secColor(sec.p)+'"></i>'+
-        '<h2>'+esc(sp.label)+'</h2><span>'+esc(subTxt)+'</span><u></u></div>';
+        '<h2>'+esc(sp.label)+'</h2><span>'+esc(subTxt)+'</span><u></u>'+
+        (showAdd?'<button class="secbtn" data-action="sec-edit" data-p="'+esc(sec.p)+'" aria-label="Renommer la section '+esc(sp.label)+'">Renommer</button>':'')+
+        '</div>';
+      if(S.secEdit===sec.p)h+=secFormHtml(sec.p,sec);
       if(cs.length)h+='<div class="grid">'+cs.map(cardHtml).join('')+'</div>';
       if(showAdd)h+='<button class="addbtn" data-action="add-task" data-p="'+esc(sec.p)+'">+ Ajouter un chantier</button>';
       h+='</section>';
     });
+    if(S.coord&&!proj){
+      h+=S.secEdit==='_new'?'<section class="sec" aria-label="Nouvelle section">'+secFormHtml('_new',null)+'</section>'
+        :'<button class="addbtn" data-action="sec-add">+ Ajouter une section</button>';
+    }
     if(!shown&&!(S.coord&&!proj&&DATA.length)){
       var plain=f==='besoin'&&!q&&!S.typeFilter;
       h+='<div class="empty"><b>'+(plain?'Toutes les équipes sont complètes':'Aucun chantier trouvé')+'</b><span>'+
@@ -513,7 +539,7 @@ function view(){
   h+='</main>';
 
   if(proj){
-    h+='<div class="qrc"><div>Scanne pour participer</div><img src="'+qrUrl(300)+'" alt="Code QR du tableau"></div>';
+    h+='<div class="qrc"><div>Scanne pour participer</div>'+(qrSrc()?'<img src="'+qrSrc()+'" alt="Code QR du tableau">':'')+'</div>';
   }
 
   // fenetres
@@ -534,7 +560,7 @@ function view(){
   }
   if(S.qrOpen){
     h+='<div class="bd" data-bd="close-qr"><div class="dlg qr" role="dialog" aria-modal="true" aria-label="Code QR">'+
-      '<h2>Scanne pour ouvrir le tableau</h2><img src="'+qrUrl(300)+'" alt="Code QR"><div class="u">'+esc(pageUrl())+'</div>'+
+      '<h2>Scanne pour ouvrir le tableau</h2>'+(qrSrc()?'<img src="'+qrSrc()+'" alt="Code QR">':'')+'<div class="u">'+esc(pageUrl())+'</div>'+
       '<button class="btn btn-line" style="min-height:52px" data-action="close-qr">Fermer</button></div></div>';
   }
   var board=null;
@@ -572,6 +598,17 @@ function view(){
   }
   h+='</div>';
   return h;
+}
+
+function secFormHtml(key,sec){
+  var sp=sec?secParts(sec):{label:'',sub:''},k=esc(key);
+  return'<div class="form warm">'+
+    '<label class="lbl" for="sl-'+k+'">Nom de la section</label>'+
+    '<input class="inp" id="sl-'+k+'" maxlength="40" data-enter="sec-save" data-p="'+k+'" placeholder="ex. : Priorité C" value="'+esc(dv('sl-'+key,sp.label))+'">'+
+    '<label class="lbl" for="ss-'+k+'">Précision (facultatif)</label>'+
+    '<input class="inp" id="ss-'+k+'" maxlength="38" data-enter="sec-save" data-p="'+k+'" placeholder="ex. : Si le temps le permet" value="'+esc(dv('ss-'+key,sp.sub))+'">'+
+    '<div class="row"><button class="btn btn-ink" style="flex:1" data-action="sec-save" data-p="'+k+'">Enregistrer</button>'+
+    '<button class="btn btn-line" data-action="sec-cancel">Annuler</button></div></div>';
 }
 
 function cardHtml(i){
@@ -658,8 +695,8 @@ function cardHtml(i){
 }
 
 // ── Reseau ───────────────────────────────────────────────────────────────────
-function call(path,body){
-  return fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+function call(path,body,method){
+  return fetch(path,{method:method||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(function(r){
       return r.json().catch(function(){return{};}).then(function(d){
         S.online=true;
@@ -892,7 +929,7 @@ function undo(path,body){
 
 // ── Actions sur les chantiers ────────────────────────────────────────────────
 function closeForms(){
-  S.claimFor=null;S.noteFor=null;
+  S.claimFor=null;S.noteFor=null;S.secEdit=null;
   if(S.editFor){S.editFor=null;removeEmptyTasks();}
   clearDrafts(FORM_PREFIXES);
 }
@@ -1004,18 +1041,14 @@ function doSaveNote(id){
 }
 
 // ── Chantiers (coordonnateur) ────────────────────────────────────────────────
-function pushTasks(okMsg){
-  var tasks=DATA.map(function(sec){
-    var copy={};Object.keys(sec).forEach(function(k){copy[k]=sec[k];});
-    copy.tasks=(sec.tasks||[]).filter(function(t){return t.nom&&String(t.nom).trim();});
-    return copy;
-  });
-  return call('/api/tasks',{pin:coordPin,tasks:tasks}).then(function(r){
-    if(!r)return;
-    if(!r.ok){if(!coordFailed(r))errorFromRes(r);return;}
+function taskCall(method,path,body){
+  body=body||{};body.pin=coordPin;
+  return call(path,body,method).then(function(r){
+    if(!r)return null;
+    if(!r.ok){if(!coordFailed(r)){tasksStale=true;errorFromRes(r);}return null;}
     if(Array.isArray(r.d.tasks))DATA=r.d.tasks;
-    render();
-    showToast(okMsg);
+    if(r.d.tasksVersion)tasksVersion=r.d.tasksVersion;
+    return r;
   });
 }
 
@@ -1024,9 +1057,9 @@ function addTask(p){
   closeForms();
   var sec=DATA.filter(function(s){return s.p===p;})[0];
   if(!sec)return;
-  var id='t'+Date.now().toString(36);
+  var id='new-'+Date.now().toString(36);
   sec.tasks=sec.tasks||[];
-  sec.tasks.push({id:id,nom:'',team:'',type:''});
+  sec.tasks.push({id:id,nom:'',team:'',type:'',_new:true});
   S.editFor=id;S.cardMenu=null;
   render();focusSoon('en-'+id);
 }
@@ -1035,25 +1068,33 @@ function saveEdit(id){
   var nomEl=$('en-'+id);
   var nom=(nomEl?nomEl.value:'').trim();
   if(!nom){showToast('Donne un nom au chantier');if(nomEl)nomEl.focus();return;}
-  var val=function(pfx,def){var el=$(pfx+id);return el?el.value:def;};
   var t=taskById(id);if(!t)return;
+  var val=function(pfx,def){var el=$(pfx+id);return el?el.value:def;};
   var oldSec=sectionOf(id);
-  t.nom=nom;
-  t.team=String(val('et-',t.team||'')).trim()||t.team||'';
-  t.type=val('ety-',t.type||'');
-  var det=String(val('ed-',t.details||'')).trim();
-  if(det)t.details=det;else delete t.details;
-  var newP=val('es-',oldSec?oldSec.p:'');
-  if(oldSec&&newP&&newP!==oldSec.p){
-    var dest=DATA.filter(function(s){return s.p===newP;})[0];
-    if(dest){
-      oldSec.tasks=oldSec.tasks.filter(function(x){return x.id!==id;});
-      dest.tasks=dest.tasks||[];dest.tasks.push(t);
-    }
-  }
-  S.editFor=null;clearDrafts(FORM_PREFIXES);
-  render();
-  return pushTasks('Chantier enregistré').then(function(){afterInteraction();});
+  var p=val('es-',oldSec?oldSec.p:'');
+  var body={nom:nom,team:String(val('et-',t.team||'')).trim(),type:val('ety-',t.type||''),details:String(val('ed-',t.details||'')).trim()};
+  var isNew=!!t._new;
+  var req;
+  if(isNew)req=taskCall('POST','/api/sections/'+encodeURIComponent(p)+'/tasks',body);
+  else{body.p=p;req=taskCall('PUT','/api/tasks/'+encodeURIComponent(id),body);}
+  return req.then(function(r){
+    if(!r)return;
+    S.editFor=null;clearDrafts(FORM_PREFIXES);removeEmptyTasks();
+    render();showToast(isNew?'Chantier ajouté':'Chantier enregistré');
+    afterInteraction();
+  });
+}
+
+function saveSection(key){
+  var l=$('sl-'+key),s=$('ss-'+key);
+  var label=(l?l.value:'').trim(),sub=(s?s.value:'').trim();
+  if(!label){showToast('Donne un nom à la section');if(l)l.focus();return;}
+  var isNew=key==='_new';
+  return taskCall(isNew?'POST':'PUT',isNew?'/api/sections':'/api/sections/'+encodeURIComponent(key),{s:sub?label+' — '+sub:label}).then(function(r){
+    if(!r)return;
+    S.secEdit=null;clearDrafts(['sl-','ss-']);
+    render();showToast(isNew?'Section ajoutée':'Section renommée');afterInteraction();
+  });
 }
 
 function askDelete(id){
@@ -1063,10 +1104,13 @@ function askDelete(id){
     text:'« '+(t&&t.nom?t.nom:'Nouveau chantier')+' » sera retiré de la liste pour tout le monde.',
     okLabel:'Supprimer',danger:true,
     onOk:function(){
-      DATA.forEach(function(sec){sec.tasks=(sec.tasks||[]).filter(function(x){return x.id!==id;});});
-      S.editFor=null;clearDrafts(FORM_PREFIXES);
-      render();
-      return pushTasks('Chantier supprimé');
+      var t=taskById(id);
+      if(t&&t._new){closeForms();render();return;}
+      return taskCall('DELETE','/api/tasks/'+encodeURIComponent(id)).then(function(r){
+        if(!r)return;
+        S.editFor=null;clearDrafts(FORM_PREFIXES);
+        render();showToast('Chantier supprimé');afterInteraction();
+      });
     }
   };
   render();focusSoon('dlg-ok');
@@ -1092,6 +1136,41 @@ function saveVolunteers(){
     if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
     render();
     showToast('Liste des bénévoles enregistrée');
+  });
+}
+
+// ── Nouvelle corvee : archive JSON puis remise a zero ───────────────────────
+function slug(s){return String(s||'').normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'corvee';}
+function downloadArchive(){
+  var data={archive:'corvee-bruchesi',exportedAt:new Date().toISOString(),event:EVENT,tasks:DATA,state:state,volunteers:VOLS};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  var d=new Date(),day=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  a.download=slug(EVENT.titre)+'-'+day+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+}
+function newCorvee(){
+  S.menuOpen=false;render();
+  Promise.all([fetchState(),loadTasks(),loadVolunteers()]).then(function(){
+    if(S.online!==true){showToast('Hors ligne : impossible d’archiver la corvée');render();return;}
+    downloadArchive();
+    S.dlg={
+      title:'Remettre le tableau à zéro ?',
+      text:'L’archive JSON vient d’être téléchargée. Tous les chantiers repasseront « à faire », sans équipes ni notes, et le message diffusé sera effacé. La liste des chantiers et des bénévoles est conservée.',
+      okLabel:'Remettre à zéro',danger:true,
+      onOk:doReset
+    };
+    render();focusSoon('dlg-ok');
+  });
+}
+function doReset(){
+  return call('/api/reset',{pin:coordPin}).then(function(r){
+    if(!r)return;
+    if(!r.ok){if(!coordFailed(r))errorFromRes(r);return;}
+    S.celebDismissed=false;S.bcDismissedTs=0;
+    return fetchState().then(function(){render();showToast('Nouvelle corvée prête');});
   });
 }
 
@@ -1235,6 +1314,11 @@ function handle(action,el){
       break;
     case 'menu-lb':S.lbOpen=true;S.menuOpen=false;render();break;
     case 'menu-print':S.menuOpen=false;render();openPrint();break;
+    case 'sec-edit':closeForms();S.secEdit=el.getAttribute('data-p');S.cardMenu=null;render();focusSoon('sl-'+S.secEdit);break;
+    case 'sec-add':closeForms();S.secEdit='_new';S.cardMenu=null;render();focusSoon('sl-_new');break;
+    case 'sec-save':saveSection(el.getAttribute('data-p'));break;
+    case 'sec-cancel':closeForms();render();afterInteraction();break;
+    case 'menu-new':newCorvee();break;
     case 'menu-eod':S.eodOpen=true;S.menuOpen=false;render();break;
     case 'close-qr':S.qrOpen=false;render();break;
     case 'close-lb':S.lbOpen=false;render();break;
