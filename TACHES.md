@@ -116,7 +116,6 @@
 | `invitation_benevoles.pdf` | PDF de l'invitation (pour Slack) |
 | `communications_benevoles.md` | Textes de tous les courriels et posts |
 | `plan_communications_complet.md` | Calendrier posts Facebook + message employés |
-| `tableau_de_bord_corvee.html` | Dashboard interactif (version Netlify statique) |
 | `railway/` | Code pour déploiement Railway (temps réel) |
 | `DEMARRER_SERVEUR.bat` | Script pour serveur local au camp (si pas WiFi) |
 
