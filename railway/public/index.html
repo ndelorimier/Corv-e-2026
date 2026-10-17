@@ -652,8 +652,8 @@ function cardHtml(i){
 }
 
 // ── Reseau ───────────────────────────────────────────────────────────────────
-function call(path,body){
-  return fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+function call(path,body,method){
+  return fetch(path,{method:method||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(function(r){
       return r.json().catch(function(){return{};}).then(function(d){
         S.online=true;
@@ -955,18 +955,14 @@ function doSaveNote(id){
 }
 
 // ── Chantiers (coordonnateur) ────────────────────────────────────────────────
-function pushTasks(okMsg){
-  var tasks=DATA.map(function(sec){
-    var copy={};Object.keys(sec).forEach(function(k){copy[k]=sec[k];});
-    copy.tasks=(sec.tasks||[]).filter(function(t){return t.nom&&String(t.nom).trim();});
-    return copy;
-  });
-  return call('/api/tasks',{pin:coordPin,tasks:tasks}).then(function(r){
-    if(!r)return;
-    if(!r.ok){if(!coordFailed(r))errorFromRes(r);return;}
+function taskCall(method,path,body){
+  body=body||{};body.pin=coordPin;
+  return call(path,body,method).then(function(r){
+    if(!r)return null;
+    if(!r.ok){if(!coordFailed(r)){tasksStale=true;errorFromRes(r);}return null;}
     if(Array.isArray(r.d.tasks))DATA=r.d.tasks;
-    render();
-    showToast(okMsg);
+    if(r.d.tasksVersion)tasksVersion=r.d.tasksVersion;
+    return r;
   });
 }
 
@@ -975,9 +971,9 @@ function addTask(p){
   closeForms();
   var sec=DATA.filter(function(s){return s.p===p;})[0];
   if(!sec)return;
-  var id='t'+Date.now().toString(36);
+  var id='new-'+Date.now().toString(36);
   sec.tasks=sec.tasks||[];
-  sec.tasks.push({id:id,nom:'',team:'',type:''});
+  sec.tasks.push({id:id,nom:'',team:'',type:'',_new:true});
   S.editFor=id;S.cardMenu=null;
   render();focusSoon('en-'+id);
 }
@@ -986,25 +982,21 @@ function saveEdit(id){
   var nomEl=$('en-'+id);
   var nom=(nomEl?nomEl.value:'').trim();
   if(!nom){showToast('Donne un nom au chantier');if(nomEl)nomEl.focus();return;}
-  var val=function(pfx,def){var el=$(pfx+id);return el?el.value:def;};
   var t=taskById(id);if(!t)return;
+  var val=function(pfx,def){var el=$(pfx+id);return el?el.value:def;};
   var oldSec=sectionOf(id);
-  t.nom=nom;
-  t.team=String(val('et-',t.team||'')).trim()||t.team||'';
-  t.type=val('ety-',t.type||'');
-  var det=String(val('ed-',t.details||'')).trim();
-  if(det)t.details=det;else delete t.details;
-  var newP=val('es-',oldSec?oldSec.p:'');
-  if(oldSec&&newP&&newP!==oldSec.p){
-    var dest=DATA.filter(function(s){return s.p===newP;})[0];
-    if(dest){
-      oldSec.tasks=oldSec.tasks.filter(function(x){return x.id!==id;});
-      dest.tasks=dest.tasks||[];dest.tasks.push(t);
-    }
-  }
-  S.editFor=null;clearDrafts(FORM_PREFIXES);
-  render();
-  return pushTasks('Chantier enregistré').then(function(){afterInteraction();});
+  var p=val('es-',oldSec?oldSec.p:'');
+  var body={nom:nom,team:String(val('et-',t.team||'')).trim(),type:val('ety-',t.type||''),details:String(val('ed-',t.details||'')).trim()};
+  var isNew=!!t._new;
+  var req;
+  if(isNew)req=taskCall('POST','/api/sections/'+encodeURIComponent(p)+'/tasks',body);
+  else{body.p=p;req=taskCall('PUT','/api/tasks/'+encodeURIComponent(id),body);}
+  return req.then(function(r){
+    if(!r)return;
+    S.editFor=null;clearDrafts(FORM_PREFIXES);removeEmptyTasks();
+    render();showToast(isNew?'Chantier ajouté':'Chantier enregistré');
+    afterInteraction();
+  });
 }
 
 function askDelete(id){
@@ -1014,10 +1006,13 @@ function askDelete(id){
     text:'« '+(t&&t.nom?t.nom:'Nouveau chantier')+' » sera retiré de la liste pour tout le monde.',
     okLabel:'Supprimer',danger:true,
     onOk:function(){
-      DATA.forEach(function(sec){sec.tasks=(sec.tasks||[]).filter(function(x){return x.id!==id;});});
-      S.editFor=null;clearDrafts(FORM_PREFIXES);
-      render();
-      return pushTasks('Chantier supprimé');
+      var t=taskById(id);
+      if(t&&t._new){closeForms();render();return;}
+      return taskCall('DELETE','/api/tasks/'+encodeURIComponent(id)).then(function(r){
+        if(!r)return;
+        S.editFor=null;clearDrafts(FORM_PREFIXES);
+        render();showToast('Chantier supprimé');afterInteraction();
+      });
     }
   };
   render();focusSoon('dlg-ok');
