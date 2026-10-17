@@ -413,6 +413,7 @@ function view(){
     ['menu-print','Version imprimable','']
   ];
   if(S.coord)items.push(['menu-eod','Bilan de fin de journée','']);
+  if(S.coord)items.push(['menu-new','Nouvelle corvée','Archiver puis remettre à zéro']);
   var menuHtml=S.menuOpen?'<div class="menu" role="menu" data-menu>'+items.map(function(m){
     return'<button class="mi" role="menuitem" data-action="'+m[0]+'"><span>'+esc(m[1])+'</span><small>'+esc(m[2])+'</small></button>';
   }).join('')+'</div>':'';
@@ -1078,6 +1079,40 @@ function saveVolunteers(){
   });
 }
 
+// ── Nouvelle corvee : archive JSON puis remise a zero ───────────────────────
+function slug(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'corvee';}
+function downloadArchive(){
+  var data={archive:'corvee-bruchesi',exportedAt:new Date().toISOString(),event:EVENT,tasks:DATA,state:state,volunteers:VOLS};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=slug(EVENT.titre)+'-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+}
+function newCorvee(){
+  S.menuOpen=false;render();
+  Promise.all([fetchState(),loadTasks(),loadVolunteers()]).then(function(){
+    if(S.online!==true){showToast('Hors ligne : impossible d’archiver la corvée');render();return;}
+    downloadArchive();
+    S.dlg={
+      title:'Remettre le tableau à zéro ?',
+      text:'L’archive JSON vient d’être téléchargée. Tous les chantiers repasseront « à faire », sans équipes ni notes, et le message diffusé sera effacé. La liste des chantiers et des bénévoles est conservée.',
+      okLabel:'Remettre à zéro',danger:true,
+      onOk:doReset
+    };
+    render();focusSoon('dlg-ok');
+  });
+}
+function doReset(){
+  return call('/api/reset',{pin:coordPin}).then(function(r){
+    if(!r)return;
+    if(!r.ok){if(!coordFailed(r))errorFromRes(r);return;}
+    S.celebDismissed=false;S.bcDismissedTs=0;
+    return fetchState().then(function(){render();showToast('Nouvelle corvée prête');});
+  });
+}
+
 // ── Connexion coordonnateur ──────────────────────────────────────────────────
 function submitPin(){
   var el=$('pin');
@@ -1222,6 +1257,7 @@ function handle(action,el){
     case 'sec-add':closeForms();S.secEdit='_new';S.cardMenu=null;render();focusSoon('sl-_new');break;
     case 'sec-save':saveSection(el.getAttribute('data-p'));break;
     case 'sec-cancel':closeForms();render();afterInteraction();break;
+    case 'menu-new':newCorvee();break;
     case 'menu-eod':S.eodOpen=true;S.menuOpen=false;render();break;
     case 'close-qr':S.qrOpen=false;render();break;
     case 'close-lb':S.lbOpen=false;render();break;
