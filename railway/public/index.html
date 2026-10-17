@@ -271,7 +271,7 @@ var wakeLock=null, audioCtx=null, toastUndo=null;
 var S={
   filter:'besoin', q:'', typeFilter:'', proj:false, sound:false, theme:'clair',
   coord:false, menuOpen:false, cardMenu:null,
-  claimFor:null, claimMode:'take', noteFor:null, editFor:null, secEdit:null,
+  claimFor:null, claimMode:'take', claimForOther:false, noteFor:null, editFor:null, secEdit:null,
   pinOpen:false, pinErr:false, qrOpen:false, lbOpen:false, eodOpen:false, dlg:null,
   myName:'', bcDismissedTs:0, celebDismissed:false,
   recent:{}, online:null, drafts:{}, busy:{}
@@ -675,6 +675,7 @@ function cardHtml(i){
   if(mine&&s==='en-cours')mi.push(['mi-leave','Quitter l’équipe']);
   if(s==='en-cours')mi.push(['mi-release','Libérer le chantier']);
   mi.push(['mi-note',v.note?'Modifier la note':'Ajouter une note']);
+  if(S.coord&&s!=='termine')mi.push(['mi-claimfor','Inscrire quelqu’un…']);
   if(S.coord){mi.push(['mi-cycle','Changer le statut']);mi.push(['mi-edit','Modifier le chantier']);}
 
   var h='<article id="card-'+eid+'" class="'+cls+'" aria-label="'+esc(t.nom||'Nouveau chantier')+'">';
@@ -695,7 +696,7 @@ function cardHtml(i){
   if(v.note)h+='<div class="note"><strong style="font-weight:800">Note · </strong>'+esc(v.note)+'</div>';
 
   if(S.claimFor===id){
-    h+='<div class="form lake"><label class="lbl" for="claim-'+eid+'">Ton prénom</label>'+
+    h+='<div class="form lake"><label class="lbl" for="claim-'+eid+'">'+(S.claimForOther?'Prénom du bénévole à inscrire':'Ton prénom')+'</label>'+
       '<div class="row" style="flex-wrap:nowrap"><input class="inp big" id="claim-'+eid+'" list="benevoles" data-enter="claim-submit" data-id="'+eid+'" maxlength="40" autocomplete="given-name" value="'+esc(dv('claim-'+id,''))+'">'+
       '<button class="btn-sq" style="width:52px;height:52px" data-action="claim-cancel" aria-label="Annuler">✕</button></div>'+
       '<button class="cta take" data-action="claim-submit" data-id="'+eid+'"'+(S.busy[id]?' disabled aria-busy="true"':'')+'>'+(S.claimMode==='join'?'Je me joins':'Je prends ce chantier')+(S.busy[id]?' …':'')+'</button></div>';
@@ -994,7 +995,7 @@ function undo(path,body){
 
 // ── Actions sur les chantiers ────────────────────────────────────────────────
 function closeForms(){
-  S.claimFor=null;S.noteFor=null;S.secEdit=null;
+  S.claimFor=null;S.claimForOther=false;S.noteFor=null;S.secEdit=null;
   if(S.editFor){S.editFor=null;removeEmptyTasks();}
   clearDrafts(FORM_PREFIXES);
 }
@@ -1032,14 +1033,14 @@ function doClaim(id,name,mode){
       var st=r.d&&r.d.state,cs=st&&st[id];
       if(r.status===409&&cs&&cs.s==='en-cours'&&[cs.n].concat(cs.extras||[]).map(lc).indexOf(lc(name))>=0){
         applyState(st,id);
-        if(!S.myName){S.myName=name;lsSet('cv26_myname',name);}
+        if(!S.myName&&!S.claimForOther){S.myName=name;lsSet('cv26_myname',name);}
         closeForms();S.cardMenu=null;
         return;
       }
       closeForms();return errorFromRes(r);
     }
     applyState(r.d.state,id);
-    if(!S.myName){S.myName=name;lsSet('cv26_myname',name);}
+    if(!S.myName&&!S.claimForOther){S.myName=name;lsSet('cv26_myname',name);}
     closeForms();S.cardMenu=null;
     render();
     if(mode==='join')showToast(name+' se joint à « '+shortName(t)+' »',function(){undo('/api/leave',{id:id,name:name});});
@@ -1302,105 +1303,6 @@ function submitPin(){
 
 // ── Version imprimable ───────────────────────────────────────────────────────
 function gS(id){return(state[id]||{}).s||'a-faire';}
-function gN(id){return(state[id]||{}).n||'';}
-function gNote(id){return(state[id]||{}).note||'';}
-function openPrint(){
-  var logoSrc=location.origin+'/'+LOGO_DARK;
-  var total=0,done=0,prog=0,todo=0;
-  DATA.forEach(function(s){(s.tasks||[]).forEach(function(t){total++;var v=gS(t.id);if(v==='termine')done++;else if(v==='en-cours')prog++;else todo++;});});
-  var typeLabels=TYPES;
-  var secColors={a1:'#C05A15',a2:'#1E6895',b:'#3D5A6A'};
-  var now=new Date();
-  var dateStr=now.toLocaleDateString('fr-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  var timeStr=now.toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'});
-
-  var tasksHtml='';
-  DATA.forEach(function(sec){
-    tasksHtml+='<div class="sec-block"><div class="sec-hdr" style="background:'+(secColors[sec.p]||'#3D5A6A')+'">'+esc(sec.s)+'</div><div class="tasks-grid">';
-    (sec.tasks||[]).forEach(function(t){
-      var v=gS(t.id),nm=gN(t.id),note=gNote(t.id);
-      var ex=(g(t.id).extras||[]);
-      var who=v==='a-faire'?'':[nm].concat(ex).filter(Boolean).join(', ');
-      var stTxt=v==='a-faire'?'Disponible':(v==='en-cours'?'En cours':'Terminé');
-      var stColor=v==='a-faire'?'#888':(v==='en-cours'?'#B84A00':'#2D6B22');
-      var stBg=v==='a-faire'?'#F2F2F2':(v==='en-cours'?'#FFF3EB':'#EDF7E6');
-      tasksHtml+='<div class="task-card st-'+esc(v)+'">';
-      tasksHtml+='<div class="task-top"><div class="task-nom">'+esc(t.nom)+'</div><div class="task-team">'+esc(t.team)+'</div></div>';
-      tasksHtml+='<div class="task-tags">';
-      if(t.type&&typeLabels[t.type])tasksHtml+='<span class="tag-type">'+esc(typeLabels[t.type])+'</span>';
-      tasksHtml+='<span class="tag-st" style="color:'+stColor+';background:'+stBg+'">'+stTxt+'</span>';
-      if(who)tasksHtml+='<span class="tag-name">'+esc(who)+'</span>';
-      tasksHtml+='</div>';
-      if(t.lieu)tasksHtml+='<div class="task-lieu">📍 '+esc(t.lieu)+'</div>';
-      if((t.subtasks||[]).length)tasksHtml+='<ul class="task-steps">'+t.subtasks.map(function(st){return'<li>'+(g(st.id).done?'☑':'☐')+' '+esc(st.nom)+'</li>';}).join('')+'</ul>';
-      if(t.materiel)tasksHtml+='<div class="task-mat">🧰 Matériel : '+esc(t.materiel)+'</div>';
-      if(t.details)tasksHtml+='<div class="task-details">'+esc(t.details).replace(/\n/g,'<br>')+'</div>';
-      if(note)tasksHtml+='<div class="task-note">'+esc(note)+'</div>';
-      tasksHtml+='</div>';
-    });
-    tasksHtml+='</div></div>';
-  });
-
-  var css='*{box-sizing:border-box;margin:0;padding:0;}'+
-    'body{font-family:"Segoe UI",Arial,sans-serif;color:#1C2833;background:#fff;font-size:10.5pt;line-height:1.4;}'+
-    '.print-hdr{display:flex;align-items:center;gap:18px;padding:18px 28px 14px;border-bottom:3px solid #EB7F3D;margin-bottom:18px;}'+
-    '.print-logo{height:58px;width:auto;}'+
-    '.hdr-title{font-size:20pt;font-weight:800;color:#EB7F3D;letter-spacing:-0.5px;line-height:1.1;}'+
-    '.hdr-sub{font-size:10pt;color:#777;margin-top:3px;}'+
-    '.hdr-stats{margin-left:auto;display:flex;gap:10px;}'+
-    '.stat-pill{text-align:center;padding:8px 14px;border-radius:10px;min-width:70px;}'+
-    '.stat-n{font-size:20pt;font-weight:800;line-height:1;}'+
-    '.stat-l{font-size:7.5pt;text-transform:uppercase;letter-spacing:1px;margin-top:3px;opacity:0.65;}'+
-    '.stat-done{background:#EDF7E6;}.stat-done .stat-n{color:#2D6B22;}'+
-    '.stat-prog{background:#FFF3EB;}.stat-prog .stat-n{color:#B84A00;}'+
-    '.stat-todo{background:#F2F2F2;}.stat-todo .stat-n{color:#555;}'+
-    '.sec-block{margin-bottom:22px;}'+
-    '.sec-hdr{color:#fff;font-size:9pt;font-weight:700;text-transform:uppercase;letter-spacing:2px;padding:7px 14px;border-radius:6px;margin-bottom:10px;}'+
-    '.tasks-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}'+
-    '.task-card{border:1px solid #E5E5E5;border-radius:9px;padding:11px 13px;break-inside:avoid;border-left:4px solid #CCC;}'+
-    '.task-card.st-termine{border-left-color:#3D7A30;background:#F8FEF4;}'+
-    '.task-card.st-en-cours{border-left-color:#EB7F3D;background:#FFFAF5;}'+
-    '.task-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;}'+
-    '.task-nom{font-size:11pt;font-weight:700;flex:1;line-height:1.3;}'+
-    '.task-team{font-size:8.5pt;color:#888;background:#F2F2F2;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0;margin-top:1px;}'+
-    '.task-tags{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:7px;}'+
-    '.tag-type{font-size:8.5pt;background:#F0F0F0;padding:2px 8px;border-radius:10px;color:#555;}'+
-    '.tag-st{font-size:8.5pt;font-weight:700;padding:2px 9px;border-radius:10px;}'+
-    '.tag-name{font-size:8.5pt;color:#666;}'+
-    '.task-lieu{font-size:9pt;font-weight:600;color:#555;margin-bottom:6px;}'+
-    '.task-steps{list-style:none;font-size:9pt;line-height:1.5;margin-bottom:7px;}'+
-    '.task-mat{font-size:9pt;color:#555;margin-bottom:7px;}'+
-    '.task-details{font-size:9pt;color:#555;margin-bottom:8px;padding:6px 9px;background:#F9F9F9;border-radius:6px;border-left:2px solid #DDD;line-height:1.5;}'+
-    '.task-note{font-size:8.5pt;color:#888;margin-top:7px;padding:4px 8px;background:#FFFBF0;border-radius:5px;border-left:2px solid #F0E0A0;font-style:italic;}'+
-    '.print-footer{margin-top:26px;padding-top:12px;border-top:1px solid #EEE;font-size:8pt;color:#AAA;text-align:center;}'+
-    '.no-print-btn{margin:0 auto 18px;display:block;padding:9px 24px;background:#EB7F3D;color:#fff;border:none;border-radius:8px;font-size:11pt;font-weight:700;cursor:pointer;}'+
-    '@media print{.no-print-btn{display:none;}@page{margin:1.4cm;}body{font-size:9.5pt;}}';
-
-  var body='<button class="no-print-btn" onclick="window.print()">Imprimer</button>'+
-    '<div class="print-hdr">'+
-      '<img class="print-logo" src="'+esc(logoSrc)+'" alt="Camp Bruchési">'+
-      '<div class="hdr-text">'+
-        '<div class="hdr-title">'+esc(EVENT.titre)+'</div>'+
-        '<div class="hdr-sub">Camp Bruchési &nbsp;·&nbsp; '+esc(EVENT.date)+' &nbsp;·&nbsp; '+esc(EVENT.heure)+' &nbsp;&nbsp; — &nbsp;&nbsp; Imprimé le '+esc(dateStr)+' à '+esc(timeStr)+'</div>'+
-      '</div>'+
-      '<div class="hdr-stats">'+
-        '<div class="stat-pill stat-done"><div class="stat-n">'+done+'</div><div class="stat-l">Terminés</div></div>'+
-        '<div class="stat-pill stat-prog"><div class="stat-n">'+prog+'</div><div class="stat-l">En cours</div></div>'+
-        '<div class="stat-pill stat-todo"><div class="stat-n">'+todo+'</div><div class="stat-l">Disponibles</div></div>'+
-      '</div>'+
-    '</div>'+
-    tasksHtml+
-    '<div class="print-footer">'+esc(EVENT.titre)+' — Camp Bruchési &mdash; '+total+' chantiers au total</div>';
-
-  var w=window.open('','_blank','width=900,height=700');
-  if(w){
-    w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>'+esc(EVENT.titre)+' — Impression</title><style>'+css+'</style></head><body>'+body+'</body></html>');
-    w.document.close();
-  }else{
-    showToast('Autorise les fenêtres pop-up pour imprimer');
-  }
-}
-
 // ── Evenements (delegation) ──────────────────────────────────────────────────
 function handle(action,el){
   var id=el.getAttribute('data-id');
@@ -1427,7 +1329,7 @@ function handle(action,el){
       render();
       break;
     case 'menu-lb':S.lbOpen=true;S.menuOpen=false;render();break;
-    case 'menu-print':S.menuOpen=false;render();openPrint();break;
+    case 'menu-print':S.menuOpen=false;render();window.open('imprimer.html','_blank');break;
     case 'sec-edit':closeForms();S.secEdit=el.getAttribute('data-p');S.cardMenu=null;render();focusSoon('sl-'+S.secEdit);break;
     case 'sec-add':closeForms();S.secEdit='_new';S.cardMenu=null;render();focusSoon('sl-_new');break;
     case 'sec-save':saveSection(el.getAttribute('data-p'));break;
@@ -1463,6 +1365,12 @@ function handle(action,el){
       closeForms();S.noteFor=id;S.cardMenu=null;
       render();focusSoon('note-'+id);
       break;
+    case 'mi-claimfor':{
+      var cs0=gS(id);
+      closeForms();S.claimFor=id;S.claimForOther=true;S.claimMode=cs0==='en-cours'?'join':'take';S.cardMenu=null;
+      render();focusSoon('claim-'+id);
+      break;
+    }
     case 'mi-cycle':doCycle(id);break;
     case 'mi-edit':
       closeForms();S.editFor=id;S.cardMenu=null;

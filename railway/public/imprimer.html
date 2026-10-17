@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impression — Corvée Camp Bruchési</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;700;800;900&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;700;800;900&display=swap"></noscript>
+<style>
+:root{--ink:#1C2833;--accent:#EB7F3D;--muted:#5B6672}
+@page{size:letter portrait;margin:0.5in}
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:'Red Hat Display',system-ui,sans-serif;color:var(--ink);background:#E9E4DE;-webkit-font-smoothing:antialiased}
+button,input,select{font-family:inherit}
+
+/* ── Barre d'outils (écran seulement) ── */
+.toolbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:3px solid var(--accent);padding:10px 16px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.toolbar[hidden]{display:none}
+.toolbar .grp{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:10px;overflow:hidden}
+.seg label{cursor:pointer}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;padding:8px 16px;font-size:15px;font-weight:800}
+.seg input:checked+span{background:var(--ink);color:#fff}
+.seg input:focus-visible+span{outline:3px solid var(--accent);outline-offset:-3px}
+.toolbar select{font-size:15px;font-weight:700;padding:8px 10px;border:2px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink)}
+.toolbar .chk{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;cursor:pointer}
+.toolbar .chk input{width:20px;height:20px;accent-color:var(--accent)}
+.btn-print{margin-left:auto;background:var(--accent);color:var(--ink);border:0;border-radius:10px;padding:11px 26px;font-size:16px;font-weight:900;cursor:pointer}
+.btn-print:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.msg{max-width:560px;margin:60px auto;padding:0 20px;text-align:center;font-size:20px;font-weight:700}
+.msg button{margin-top:16px;background:var(--ink);color:#fff;border:0;border-radius:10px;padding:12px 24px;font-size:16px;font-weight:800;cursor:pointer}
+.msg.err{color:#8A2A12}
+
+/* ── Feuilles (aperçu écran = lettre) ── */
+.sheet,.liste{width:8.5in;max-width:100%;margin:18px auto;background:#fff;padding:0.5in;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+.sheet{min-height:11in;display:flex;flex-direction:column}
+.hd{display:flex;align-items:center;gap:12px;border-bottom:2.5pt solid var(--accent);padding-bottom:6pt;margin-bottom:10pt}
+.hd img{height:0.34in;width:auto;display:block}
+.hd .ev{font-size:11pt;font-weight:700;color:var(--ink)}
+.pill{align-self:flex-start;display:inline-block;font-size:10.5pt;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:3pt 11pt;border-radius:99px}
+.nom{font-size:30pt;line-height:1.08;font-weight:900;margin:8pt 0 8pt;letter-spacing:-.01em;overflow-wrap:anywhere}
+.infos{display:flex;flex-wrap:wrap;gap:3pt 16pt;font-size:12.5pt;font-weight:700;margin-bottom:6pt}
+.infos .ty{background:#F1E4D6;border-radius:99px;padding:0 9pt}
+.mat,.det{font-size:12pt;line-height:1.35;margin-bottom:6pt}
+.mat b{font-weight:800}
+.det{color:#33414D}
+.blk{margin-top:9pt}
+.lbl{font-size:12pt;font-weight:900;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4pt}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:flex;align-items:flex-start;gap:9pt;font-size:13pt;line-height:1.25;padding:3pt 0;break-inside:avoid}
+.box{flex:none;width:14pt;height:14pt;border:1.8pt solid var(--ink);border-radius:2.5pt;margin-top:1pt;display:inline-flex;align-items:center;justify-content:center;font-size:11pt;line-height:1;font-weight:900}
+.steps li.on span:last-child{color:#4A5560}
+.row{display:flex;align-items:flex-end;gap:8pt}
+.row .lbl{margin:0;white-space:nowrap}
+.ln{border-bottom:1pt solid var(--ink);height:0.3in;display:flex;align-items:flex-end;padding:0 3pt 1pt;font-size:13pt;font-weight:700;overflow:hidden;white-space:nowrap}
+.row .ln{flex:1}
+.note{font-size:12pt;font-weight:700;background:#FFF1E6;border-left:3pt solid var(--accent);padding:3pt 8pt;margin-bottom:2pt}
+.foot{margin-top:auto;padding-top:8pt;display:flex;align-items:center;gap:10pt;font-size:10.5pt;font-weight:700;color:var(--muted)}
+.foot img{width:0.75in;height:0.75in;display:block}
+
+/* ── Liste ── */
+.liste table{width:100%;border-collapse:collapse;font-size:10.5pt}
+.liste thead{display:table-header-group}
+.liste th{text-align:left;font-size:9pt;font-weight:900;letter-spacing:.06em;text-transform:uppercase;border-bottom:2pt solid var(--ink);padding:4pt 6pt}
+.liste td{vertical-align:top;padding:5pt 6pt;border-bottom:.75pt solid #C9CED3}
+.liste tr{break-inside:avoid;page-break-inside:avoid}
+.liste tr.sec td{font-size:12pt;font-weight:900;letter-spacing:.04em;text-transform:uppercase;padding:5pt 8pt;border:0}
+.liste tr.sec{break-after:avoid;page-break-after:avoid}
+.liste .c0{width:0.4in}
+.liste .c2{width:1.05in}
+.liste .c4{width:0.95in;font-weight:800}
+.liste .cn{font-weight:800;font-size:11.5pt;line-height:1.2}
+.liste .cl{font-size:9pt;color:var(--muted);font-weight:600}
+.liste .blank{border-bottom:1pt solid var(--ink);height:0.2in}
+.liste .box{margin-top:0}
+
+/* ── Impression ── */
+@media print{
+  body{background:#fff}
+  .toolbar{display:none !important}
+  .sheet,.liste{width:auto;max-width:none;margin:0;padding:0;box-shadow:none}
+  .sheet{min-height:9.7in;break-after:page;page-break-after:always}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+}
+@media (max-width:640px){.btn-print{margin-left:0;width:100%}.sheet,.liste{padding:16px}}
+</style>
+</head>
+<body>
+<div id="bar" class="toolbar" hidden></div>
+<div id="app"><div class="msg">Chargement…</div></div>
+
+<script>
+(function(){
+'use strict';
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function $(id){return document.getElementById(id);}
+
+var TYPES={peinture:'Peinture',jardinage:'Jardinage',montage:'Montage',nettoyage:'Nettoyage',manutention:'Manutention',reparation:'Réparation',rangement:'Rangement',hivernisation:'Hivernisation'};
+var ST_LABEL={'a-faire':'Disponible','en-cours':'En cours','termine':'Terminé'};
+var SEC_BG={a1:'#EB7F3D',a2:'#8BC6F1',b:'#5B7A8A'};
+var SEC_FG={a1:'#1C2833',a2:'#1C2833',b:'#FFFFFF'};
+var LOGO='assets/logo-bruchesi-2025.png';
+
+var D={cfg:{},secs:[],state:{}};
+var opt={mode:'fiches',section:'',noms:true};
+
+// ── Options <-> URL ──
+function readUrl(){
+  var q=new URLSearchParams(location.search);
+  opt.mode=q.get('mode')==='liste'?'liste':'fiches';
+  opt.section=q.get('section')||'';
+  opt.noms=q.get('noms')!=='0';
+}
+function writeUrl(){
+  var q=new URLSearchParams();
+  q.set('mode',opt.mode);
+  if(opt.section)q.set('section',opt.section);
+  q.set('noms',opt.noms?'1':'0');
+  try{history.replaceState(null,'','?'+q.toString());}catch(e){}
+}
+
+// ── QR (librairie locale, optionnelle) ──
+var qrData='';
+function loadQr(){
+  return new Promise(function(res){
+    var s=document.createElement('script');
+    s.src='vendor/qrcode.js';
+    s.onload=s.onerror=function(){res();};
+    document.head.appendChild(s);
+  });
+}
+function buildQr(){
+  try{
+    var q=window.qrcode(0,'M');q.addData(location.origin+'/');q.make();
+    qrData='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(q.createSvgTag({cellSize:4,margin:0,scalable:true}));
+  }catch(e){qrData='';}
+}
+
+// ── Données ──
+function getJson(url){
+  return fetch(url,{cache:'no-store'}).then(function(r){
+    if(!r.ok)throw new Error(url+' '+r.status);
+    return r.json();
+  });
+}
+function st(id){return D.state[id]||{};}
+function people(id){
+  var s=st(id);
+  return [s.n].concat(Array.isArray(s.extras)?s.extras:[]).map(function(x){return String(x==null?'':x).trim();}).filter(Boolean);
+}
+function teamMax(team){
+  var m=String(team||'').match(/\d+/g),mx=0;
+  if(m)m.forEach(function(x){x=parseInt(x,10);if(x>mx)mx=x;});
+  if(mx<1)return 4;
+  return Math.min(mx,12);
+}
+function secBg(p){return SEC_BG[p]||'#5B7A8A';}
+function secFg(p){return SEC_FG[p]||'#FFFFFF';}
+function visibleSecs(){
+  return D.secs.filter(function(s){
+    return (s.tasks||[]).length&&(!opt.section||s.p===opt.section);
+  });
+}
+
+// ── Rendu : en-tête commun ──
+function evLine(){
+  var e=D.cfg.event||{};
+  return [e.titre,e.date,e.heure].map(function(x){return String(x==null?'':x).trim();}).filter(Boolean).join(' · ');
+}
+function header(){
+  var l=evLine();
+  return '<div class="hd"><img src="'+esc(LOGO)+'" alt="Camp Bruchési">'+(l?'<div class="ev">'+esc(l)+'</div>':'')+'</div>';
+}
+function boxHtml(on){return '<span class="box" aria-hidden="true">'+(on?'✓':'')+'</span>';}
+
+// ── Mode Fiches ──
+function ficheHtml(sec,t){
+  var s=st(t.id),ppl=opt.noms?people(t.id):[],resp=opt.noms?String(s.n||'').trim():'';
+  var max=teamMax(t.team);
+  var h='<section class="sheet">'+header();
+  if(sec.s)h+='<div class="pill" style="background:'+secBg(sec.p)+';color:'+secFg(sec.p)+'">'+esc(sec.s)+'</div>';
+  h+='<h1 class="nom">'+esc(t.nom||'')+'</h1>';
+
+  var info=[];
+  if(t.lieu)info.push('<span>📍 '+esc(t.lieu)+'</span>');
+  if(t.team)info.push('<span>👥 '+esc(t.team)+'</span>');
+  if(TYPES[t.type])info.push('<span class="ty">'+esc(TYPES[t.type])+'</span>');
+  if(info.length)h+='<div class="infos">'+info.join('')+'</div>';
+  if(t.materiel)h+='<div class="mat"><b>🧰 Matériel :</b> '+esc(t.materiel)+'</div>';
+  if(t.details)h+='<div class="det">'+esc(t.details)+'</div>';
+
+  var subs=Array.isArray(t.subtasks)?t.subtasks.filter(function(x){return x&&x.nom;}):[];
+  if(subs.length){
+    h+='<div class="blk"><div class="lbl">Étapes</div><ul class="steps">'+subs.map(function(x){
+      var on=!!st(x.id).done;
+      return '<li class="'+(on?'on':'')+'">'+boxHtml(on)+'<span>'+esc(x.nom)+'</span></li>';
+    }).join('')+'</ul></div>';
+  }
+
+  h+='<div class="blk row"><div class="lbl">Responsable :</div><div class="ln">'+esc(resp)+'</div></div>';
+
+  var lines='';
+  ppl.forEach(function(n){lines+='<div class="ln">'+esc(n)+'</div>';});
+  for(var k=ppl.length;k<max;k++)lines+='<div class="ln"></div>';
+  h+='<div class="blk"><div class="lbl">Équipe :</div>'+lines+'</div>';
+
+  h+='<div class="blk"><div class="lbl">Notes :</div>';
+  if(s.note)h+='<div class="note">'+esc(s.note)+'</div>';
+  h+='<div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>';
+
+  if(qrData)h+='<div class="foot"><img src="'+qrData+'" alt="Code QR du tableau en direct"><div>Scanne pour le tableau en direct</div></div>';
+  else h+='<div class="foot"></div>';
+  return h+'</section>';
+}
+function fichesHtml(){
+  var h='';
+  visibleSecs().forEach(function(sec){(sec.tasks||[]).forEach(function(t){h+=ficheHtml(sec,t);});});
+  return h;
+}
+
+// ── Mode Liste ──
+function listeHtml(){
+  var secs=visibleSecs();
+  if(!secs.length)return '';
+  var h='<section class="liste">'+header()+'<table><thead><tr><th class="c0"></th><th>Chantier</th><th class="c2">Équipe</th><th>Responsable / équipe</th><th class="c4">Statut</th></tr></thead><tbody>';
+  secs.forEach(function(sec){
+    if(sec.s)h+='<tr class="sec"><td colspan="5" style="background:'+secBg(sec.p)+';color:'+secFg(sec.p)+'">'+esc(sec.s)+'</td></tr>';
+    (sec.tasks||[]).forEach(function(t){
+      var v=st(t.id).s||'a-faire',ppl=opt.noms?people(t.id):[];
+      h+='<tr><td class="c0">'+boxHtml(v==='termine')+'</td>'+
+        '<td><div class="cn">'+esc(t.nom||'')+'</div>'+(t.lieu?'<div class="cl">'+esc(t.lieu)+'</div>':'')+'</td>'+
+        '<td class="c2">'+esc(t.team||'')+'</td>'+
+        '<td>'+(ppl.length?esc(ppl.join(', ')):'<div class="blank"></div>')+'</td>'+
+        '<td class="c4">'+esc(ST_LABEL[v]||ST_LABEL['a-faire'])+'</td></tr>';
+    });
+  });
+  return h+'</tbody></table></section>';
+}
+
+// ── Page ──
+function renderDoc(){
+  var h=opt.mode==='liste'?listeHtml():fichesHtml();
+  $('app').innerHTML=h||'<div class="msg">Aucun chantier à imprimer.</div>';
+}
+function renderBar(){
+  var bar=$('bar');
+  bar.innerHTML=
+    '<div class="grp" role="radiogroup" aria-label="Mode"><div class="seg">'+
+      '<label><input type="radio" name="mode" value="fiches"'+(opt.mode==='fiches'?' checked':'')+'><span>Fiches</span></label>'+
+      '<label><input type="radio" name="mode" value="liste"'+(opt.mode==='liste'?' checked':'')+'><span>Liste</span></label>'+
+    '</div></div>'+
+    '<div class="grp"><label for="sec">Section</label><select id="sec"><option value="">Toutes</option>'+
+      D.secs.map(function(s){return '<option value="'+esc(s.p)+'"'+(opt.section===s.p?' selected':'')+'>'+esc(s.s||s.p)+'</option>';}).join('')+
+    '</select></div>'+
+    '<label class="chk"><input type="checkbox" id="noms"'+(opt.noms?' checked':'')+'>Inclure les noms déjà inscrits</label>'+
+    '<button type="button" class="btn-print" id="print">Imprimer</button>';
+  bar.hidden=false;
+}
+function onBar(e){
+  var t=e.target;
+  if(t.name==='mode')opt.mode=t.value==='liste'?'liste':'fiches';
+  else if(t.id==='sec')opt.section=t.value;
+  else if(t.id==='noms')opt.noms=t.checked;
+  else return;
+  writeUrl();renderDoc();
+}
+
+function showError(){
+  $('bar').hidden=true;
+  $('app').innerHTML='<div class="msg err" role="alert">Impossible de charger les données du tableau. Vérifie la connexion, puis réessaie.<br><button type="button" id="retry">Réessayer</button></div>';
+  $('retry').addEventListener('click',function(){location.reload();});
+}
+
+function init(){
+  readUrl();
+  Promise.all([
+    getJson('/api/config').catch(function(){return {};}),
+    getJson('/api/tasks'),
+    getJson('/api/state'),
+    loadQr()
+  ]).then(function(r){
+    D.cfg=r[0]||{};
+    D.secs=Array.isArray(r[1]&&r[1].tasks)?r[1].tasks:[];
+    D.state=(r[2]&&r[2].state)||{};
+    if(!D.secs.some(function(s){return s.p===opt.section;}))opt.section='';
+    buildQr();
+    renderBar();renderDoc();writeUrl();
+  }).catch(showError);
+}
+
+$('bar').addEventListener('change',onBar);
+$('bar').addEventListener('click',function(e){if(e.target&&e.target.id==='print')window.print();});
+init();
+})();
+</script>
+</body>
+</html>
