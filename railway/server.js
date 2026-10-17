@@ -200,7 +200,31 @@ app.post('/api/leave', (req, res) => {
   const { id, name } = req.body;
   if (!getTaskIds().includes(id)) return res.status(400).json({ error: 'Tache inconnue' });
   if (!state[id]) return res.json({ ok: true, state });
-  if (state[id].extras) state[id].extras = state[id].extras.filter(n => n !== (name||'').trim());
+  const nm = (name || '').trim();
+  const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  const t = state[id];
+  const extras = t.extras || [];
+  if (nm && same(t.n, nm)) {
+    if (extras.length) {
+      t.n = extras[0];
+      t.extras = extras.slice(1);
+    } else {
+      t.s = 'a-faire';
+      t.n = '';
+      t.extras = [];
+    }
+  } else if (t.extras) {
+    t.extras = extras.filter(n => n !== nm);
+  }
+  saveState(state);
+  res.json({ ok: true, state });
+});
+
+app.post('/api/reopen', (req, res) => {
+  const { id } = req.body;
+  if (!getTaskIds().includes(id)) return res.status(400).json({ error: 'Tache inconnue' });
+  if (!state[id] || state[id].s !== 'termine') return res.status(409).json({ error: 'Tache non terminee' });
+  state[id].s = 'en-cours';
   saveState(state);
   res.json({ ok: true, state });
 });

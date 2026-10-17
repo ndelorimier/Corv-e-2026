@@ -61,3 +61,22 @@ test('liste de benevoles protegee par le code', async () => {
   const d = await (await fetch(base + '/api/volunteers')).json();
   assert.deepStrictEqual(d.names, ['Pepin', 'Spout']);
 });
+
+test('leave du responsable promeut le premier equipier', async () => {
+  await post('/api/claim', { id: 'f2', name: 'Ana' });
+  await post('/api/join', { id: 'f2', name: 'Bo' });
+  const d = await (await post('/api/leave', { id: 'f2', name: 'ana' })).json();
+  assert.strictEqual(d.state.f2.n, 'Bo');
+  assert.deepStrictEqual(d.state.f2.extras, []);
+  const d2 = await (await post('/api/leave', { id: 'f2', name: 'Bo' })).json();
+  assert.strictEqual(d2.state.f2.s, 'a-faire');
+});
+
+test('reopen remet en cours une tache terminee', async () => {
+  await post('/api/claim', { id: 'f3', name: 'Cy' });
+  await post('/api/complete', { id: 'f3' });
+  const r = await post('/api/reopen', { id: 'f3' });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual((await r.json()).state.f3.s, 'en-cours');
+  assert.strictEqual((await post('/api/reopen', { id: 'f3' })).status, 409);
+});
