@@ -215,6 +215,7 @@ html.soir .err{color:#FF9A93}
 <div id="app"></div>
 <div id="toast"></div>
 
+<script src="vendor/qrcode.js"></script>
 <script>
 (function(){
 'use strict';
@@ -357,7 +358,17 @@ function render(){
 }
 
 function pageUrl(){return location.origin+'/';}
-function qrUrl(size){return'https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&margin=0&data='+encodeURIComponent(pageUrl());}
+var qrCache={};
+function qrSrc(){
+  var u=pageUrl();
+  if(qrCache[u]===undefined){
+    try{
+      var q=window.qrcode(0,'M');q.addData(u);q.make();
+      qrCache[u]='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(q.createSvgTag({cellSize:4,margin:0,scalable:true}));
+    }catch(e){qrCache[u]='';}
+  }
+  return qrCache[u];
+}
 
 function view(){
   var dark=isDark(),me=lc(S.myName),proj=S.proj;
@@ -522,7 +533,7 @@ function view(){
   h+='</main>';
 
   if(proj){
-    h+='<div class="qrc"><div>Scanne pour participer</div><img src="'+qrUrl(300)+'" alt="Code QR du tableau"></div>';
+    h+='<div class="qrc"><div>Scanne pour participer</div>'+(qrSrc()?'<img src="'+qrSrc()+'" alt="Code QR du tableau">':'')+'</div>';
   }
 
   // fenetres
@@ -543,7 +554,7 @@ function view(){
   }
   if(S.qrOpen){
     h+='<div class="bd" data-bd="close-qr"><div class="dlg qr" role="dialog" aria-modal="true" aria-label="Code QR">'+
-      '<h2>Scanne pour ouvrir le tableau</h2><img src="'+qrUrl(300)+'" alt="Code QR"><div class="u">'+esc(pageUrl())+'</div>'+
+      '<h2>Scanne pour ouvrir le tableau</h2>'+(qrSrc()?'<img src="'+qrSrc()+'" alt="Code QR">':'')+'<div class="u">'+esc(pageUrl())+'</div>'+
       '<button class="btn btn-line" style="min-height:52px" data-action="close-qr">Fermer</button></div></div>';
   }
   var board=null;
@@ -1080,7 +1091,7 @@ function saveVolunteers(){
 }
 
 // ── Nouvelle corvee : archive JSON puis remise a zero ───────────────────────
-function slug(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'corvee';}
+function slug(s){return String(s||'').normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'corvee';}
 function downloadArchive(){
   var data={archive:'corvee-bruchesi',exportedAt:new Date().toISOString(),event:EVENT,tasks:DATA,state:state,volunteers:VOLS};
   var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});

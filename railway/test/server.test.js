@@ -166,3 +166,12 @@ test('ajouter puis renommer une section', async () => {
   assert.strictEqual(d2.tasks.find(s => s.p === p).s, 'Priorité C — Bonus');
   assert.strictEqual((await post('/api/sections/' + p + '/tasks', { pin: '9999', nom: 'Bonus' })).status, 200);
 });
+
+test('le code QR est genere localement, sans service externe', async () => {
+  const r = await fetch(base + '/vendor/qrcode.js');
+  assert.strictEqual(r.status, 200);
+  assert.ok((await r.text()).includes('createSvgTag'));
+  const page = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  assert.ok(!page.includes('api.qrserver.com'));
+  assert.ok(page.includes('vendor/qrcode.js'));
+});

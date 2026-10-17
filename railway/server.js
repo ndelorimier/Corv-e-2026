@@ -21,6 +21,7 @@ let tasksVersion = Date.now();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.get('/vendor/qrcode.js', (req, res) => res.sendFile(require.resolve('qrcode-generator')));
 
 const DEFAULT_TASKS = [
   {p:'a1', s:'Priorite A1 — Entree du site', tasks:[
