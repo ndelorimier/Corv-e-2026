@@ -6,7 +6,8 @@
 <title>Corvée — Camp Bruchési</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;700;800;900&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;700;800;900&display=swap"></noscript>
 <style>
 :root{--bg:#FDEFE3;--surface:#FFFFFF;--ink:#1C2833;--muted:#4A5560;--line:#E8D5C2;--track:#F1E4D6;--warm:#FFF6EE;--accentText:#9C4610;--lakeText:#1F5F8B;--lakeBg:#E1F0FB;--doneText:#2F6B26;--doneBg:#F3F8EF;--doneBtn:#2F6B26;--doneBtnInk:#FFFFFF;--tagIdle:#F1E4D6;--maxw:760px}
 html.soir,html.proj{--bg:#1C2833;--surface:#243443;--ink:#FFFFFF;--muted:#C3CDD6;--line:#3A4B5C;--track:#2E3F50;--warm:#2C3D4E;--accentText:#F5A46E;--lakeText:#8BC6F1;--lakeBg:#22405A;--doneText:#A9D98C;--doneBg:#22352A;--doneBtn:#A9D98C;--doneBtnInk:#1C2833;--tagIdle:#33475A}
@@ -64,6 +65,11 @@ select.inp{padding:0 12px;font-weight:600}
 .bcbar .in{padding:12px 16px;display:flex;align-items:center;gap:12px}
 .bcbar .k{font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#F5A46E}
 .bcbar .m{font-size:17px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
+.bcbar .t{font-size:13px;font-weight:700;margin-top:2px;color:#C3CDD6}
+html.proj .bcbar .k{font-size:18px}
+html.proj .bcbar .m{font-size:26px}
+html.proj .bcbar .t{font-size:18px}
+html.proj .bcbar .x{display:none}
 .bcbar .x{width:44px;height:44px;border-radius:12px;border:2px solid rgba(255,255,255,0.35);background:transparent;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0}
 
 main{padding:16px;display:flex;flex-direction:column;gap:16px}
@@ -145,6 +151,7 @@ h3{margin:0;font-size:20px;font-weight:800;line-height:1.2;text-wrap:pretty;over
 .form .inp.big{min-height:52px;font-size:18px;font-weight:700;border-color:var(--lakeText)}
 .cta{min-height:56px;border-radius:14px;border:none;font-size:18px;font-weight:900;cursor:pointer;width:100%}
 .cta:active{transform:scale(0.98)}
+.cta:disabled{opacity:0.6;cursor:progress}
 .cta.take{background:#EB7F3D;color:#1C2833}
 .cta.join{border:3px solid #EB7F3D;background:var(--surface);color:var(--accentText)}
 .cta.finish{background:var(--doneBtn);color:var(--doneBtnInk)}
@@ -267,7 +274,7 @@ var S={
   claimFor:null, claimMode:'take', noteFor:null, editFor:null, secEdit:null,
   pinOpen:false, pinErr:false, qrOpen:false, lbOpen:false, eodOpen:false, dlg:null,
   myName:'', bcDismissedTs:0, celebDismissed:false,
-  recent:{}, online:null, drafts:{}
+  recent:{}, online:null, drafts:{}, busy:{}
 };
 
 // ── Donnees derivees ─────────────────────────────────────────────────────────
@@ -429,8 +436,14 @@ function view(){
     mine:counts.mine?'Les chantiers où tu es inscrit·e.':'Tu n’es inscrit·e nulle part pour l’instant.'
   };
 
+  if(proj)subs[f]=subs[f]+' · '+nDone+' sur '+total+' terminés';
   var bc=state._broadcast||{};
   var hasBc=!!bc.msg&&bc.ts!==S.bcDismissedTs;
+  var bcAgo='';
+  if(hasBc&&bc.ts){
+    var bcMin=Math.floor((Date.now()-bc.ts)/60000);
+    bcAgo=bcMin<1?'à l’instant':(bcMin<60?'il y a '+bcMin+' min':'il y a '+Math.floor(bcMin/60)+' h');
+  }
   var when=[EVENT.date,EVENT.heure].filter(Boolean).join(' · ');
   var dot=S.online===true?'ok':(S.online===false?'off':'');
   var syncLabel=S.online===true?'En direct':(S.online===false?'Hors ligne':'Connexion…');
@@ -469,7 +482,7 @@ function view(){
 
   // message diffuse
   if(hasBc){
-    h+='<div class="bcbar" role="alert"><div class="wrap in"><div style="flex:1;min-width:0"><div class="k">Message des coordonnateurs</div><div class="m">'+esc(bc.msg)+'</div></div>'+
+    h+='<div class="bcbar" role="alert"><div class="wrap in"><div style="flex:1;min-width:0"><div class="k">Message des coordonnateurs</div><div class="m">'+esc(bc.msg)+'</div>'+(bcAgo?'<div class="t">'+esc(bcAgo)+'</div>':'')+'</div>'+
       '<button class="x" data-action="dismiss-bc" aria-label="Masquer le message">✕</button></div></div>';
   }
 
@@ -685,7 +698,7 @@ function cardHtml(i){
     h+='<div class="form lake"><label class="lbl" for="claim-'+eid+'">Ton prénom</label>'+
       '<div class="row" style="flex-wrap:nowrap"><input class="inp big" id="claim-'+eid+'" list="benevoles" data-enter="claim-submit" data-id="'+eid+'" maxlength="40" autocomplete="given-name" value="'+esc(dv('claim-'+id,''))+'">'+
       '<button class="btn-sq" style="width:52px;height:52px" data-action="claim-cancel" aria-label="Annuler">✕</button></div>'+
-      '<button class="cta take" data-action="claim-submit" data-id="'+eid+'">'+(S.claimMode==='join'?'Je me joins':'Je prends ce chantier')+'</button></div>';
+      '<button class="cta take" data-action="claim-submit" data-id="'+eid+'"'+(S.busy[id]?' disabled aria-busy="true"':'')+'>'+(S.claimMode==='join'?'Je me joins':'Je prends ce chantier')+(S.busy[id]?' …':'')+'</button></div>';
   }
   if(S.noteFor===id){
     h+='<div class="form" style="padding:0"><label class="lbl" for="note-'+eid+'" style="font-size:15px">Note visible par tous</label>'+
@@ -719,9 +732,10 @@ function cardHtml(i){
       '<button class="btn btn-danger" data-action="edit-delete" data-id="'+eid+'">Supprimer</button></div></div>';
   }
 
-  if(kind==='take')h+='<button class="cta take" data-action="primary" data-kind="take" data-id="'+eid+'">Je prends ce chantier</button>';
-  if(kind==='join')h+='<button class="cta join" data-action="primary" data-kind="join" data-id="'+eid+'">Je me joins à l’équipe</button>';
-  if(kind==='finish')h+='<button class="cta finish" data-action="primary" data-kind="finish" data-id="'+eid+'">C’est terminé ✓</button>';
+  var bz=S.busy[id],bzA=bz?' disabled aria-busy="true"':'',bzT=bz?' …':'';
+  if(kind==='take')h+='<button class="cta take" data-action="primary" data-kind="take" data-id="'+eid+'"'+bzA+'>Je prends ce chantier'+bzT+'</button>';
+  if(kind==='join')h+='<button class="cta join" data-action="primary" data-kind="join" data-id="'+eid+'"'+bzA+'>Je me joins à l’équipe'+bzT+'</button>';
+  if(kind==='finish')h+='<button class="cta finish" data-action="primary" data-kind="finish" data-id="'+eid+'"'+bzA+'>C’est terminé ✓'+bzT+'</button>';
 
   if(menuOpen){
     h+='<div class="cardmenu" role="menu" data-menu>'+mi.map(function(m){
@@ -733,17 +747,27 @@ function cardHtml(i){
 }
 
 // ── Reseau ───────────────────────────────────────────────────────────────────
+var NET_MS=10000;
+// Delai maximal de 10 s : run(signal) doit renvoyer une promesse (fetch + lecture du corps)
+function withTimeout(run){
+  var ac=typeof AbortController==='function'?new AbortController():null;
+  var tm=ac?setTimeout(function(){ac.abort();},NET_MS):null;
+  function end(){if(tm)clearTimeout(tm);}
+  return run(ac?ac.signal:undefined).then(function(v){end();return v;},function(e){end();throw e;});
+}
 function call(path,body,method){
-  return fetch(path,{method:method||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-    .then(function(r){
-      return r.json().catch(function(){return{};}).then(function(d){
-        S.online=true;
-        return{ok:r.ok,status:r.status,d:d||{}};
+  return withTimeout(function(signal){
+    return fetch(path,{method:method||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:signal})
+      .then(function(r){
+        return r.json().catch(function(){return{};}).then(function(d){
+          S.online=true;
+          return{ok:r.ok,status:r.status,d:d||{}};
+        });
       });
-    })
-    .catch(function(){
+  })
+    .catch(function(e){
       S.online=false;
-      showToast('Connexion perdue, réessaie');
+      showToast(e&&e.name==='AbortError'?'Connexion lente, réessaie':'Connexion perdue, réessaie');
       render();
       return null;
     });
@@ -787,7 +811,9 @@ function loadVolunteers(){
 }
 
 function fetchState(){
-  return fetch('/api/state?t='+Date.now()).then(function(r){return r.json();}).then(function(d){
+  return withTimeout(function(signal){
+    return fetch('/api/state?t='+Date.now(),{signal:signal}).then(function(r){return r.json();});
+  }).then(function(d){
     if(!d||!d.state)throw new Error('etat');
     var wasOnline=S.online===true;
     S.online=true;
@@ -840,6 +866,7 @@ function detectChanges(ns,ownId){
 function startPolling(){
   fetchState();
   setInterval(fetchState,POLL_MS);
+  setInterval(function(){var b=state._broadcast||{};if(b.msg&&b.ts)renderSoon();},60000);
   tickTimer=setInterval(function(){
     var now=Date.now(),r=S.recent,expired=false;
     Object.keys(r).forEach(function(k){if(r[k]<=now){delete r[k];expired=true;}});
@@ -995,27 +1022,43 @@ function doClaim(id,name,mode){
       return;
     }
   }
+  if(S.busy[id])return;
+  S.busy[id]=true;render();
+  function unbusy(){S.busy[id]=false;render();}
   return call(mode==='join'?'/api/join':'/api/claim',{id:id,name:name}).then(function(r){
     if(!r)return;
-    if(!r.ok){closeForms();return errorFromRes(r);}
+    if(!r.ok){
+      // 409 mais c'est deja toi : succes silencieux
+      var st=r.d&&r.d.state,cs=st&&st[id];
+      if(r.status===409&&cs&&cs.s==='en-cours'&&[cs.n].concat(cs.extras||[]).map(lc).indexOf(lc(name))>=0){
+        applyState(st,id);
+        if(!S.myName){S.myName=name;lsSet('cv26_myname',name);}
+        closeForms();S.cardMenu=null;
+        return;
+      }
+      closeForms();return errorFromRes(r);
+    }
     applyState(r.d.state,id);
     if(!S.myName){S.myName=name;lsSet('cv26_myname',name);}
     closeForms();S.cardMenu=null;
     render();
     if(mode==='join')showToast(name+' se joint à « '+shortName(t)+' »',function(){undo('/api/leave',{id:id,name:name});});
     else showToast(name+' a pris « '+shortName(t)+' »',function(){undo('/api/release',{id:id});});
-  });
+  }).then(unbusy,function(e){unbusy();throw e;});
 }
 
 function doFinish(id){
   var t=taskById(id);
+  if(S.busy[id])return;
+  S.busy[id]=true;render();
+  function unbusy(){S.busy[id]=false;render();}
   return call('/api/complete',{id:id}).then(function(r){
     if(!r)return;
     if(!r.ok)return errorFromRes(r);
     applyState(r.d.state,id);S.cardMenu=null;
     render();
     showToast('« '+shortName(t)+' » est terminé. Merci !',function(){undo('/api/reopen',{id:id});});
-  });
+  }).then(unbusy,function(e){unbusy();throw e;});
 }
 
 function doRelease(id){
@@ -1233,7 +1276,7 @@ function doReset(){
   return call('/api/reset',{pin:coordPin}).then(function(r){
     if(!r)return;
     if(!r.ok){if(!coordFailed(r))errorFromRes(r);return;}
-    S.celebDismissed=false;S.bcDismissedTs=0;
+    S.celebDismissed=false;S.bcDismissedTs=0;lsSet('cv26_bc','0');
     return fetchState().then(function(){render();showToast('Nouvelle corvée prête');});
   });
 }
@@ -1394,7 +1437,7 @@ function handle(action,el){
     case 'close-qr':S.qrOpen=false;render();break;
     case 'close-lb':S.lbOpen=false;render();break;
     case 'close-eod':S.eodOpen=false;render();break;
-    case 'dismiss-bc':S.bcDismissedTs=(state._broadcast||{}).ts||0;render();break;
+    case 'dismiss-bc':S.bcDismissedTs=(state._broadcast||{}).ts||0;lsSet('cv26_bc',String(S.bcDismissedTs));render();break;
     case 'dismiss-celeb':S.celebDismissed=true;render();break;
     case 'bc-send':{
       var bi=$('bc-input'),m=(bi?bi.value:'').trim();
@@ -1495,6 +1538,7 @@ window.addEventListener('offline',function(){S.online=false;renderSoon();});
 
 // ── Demarrage ────────────────────────────────────────────────────────────────
 S.myName=lsGet('cv26_myname')||'';
+S.bcDismissedTs=+lsGet('cv26_bc')||0;
 S.sound=lsGet('cv26_sound')==='1';
 S.theme=lsGet('cv26_theme2')==='soir'?'soir':'clair';
 try{
