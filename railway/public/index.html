@@ -18,6 +18,7 @@ button,input,select,textarea{font-family:inherit}
 :focus-visible{outline:3px solid var(--lakeText);outline-offset:2px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .page{min-height:100vh;padding-bottom:96px}
+html.proj .page{min-height:0}
 .wrap{max-width:var(--maxw);margin:0 auto}
 
 /* boutons et champs */
@@ -142,9 +143,11 @@ h3{margin:0;font-size:20px;font-weight:800;line-height:1.2;text-wrap:pretty;over
 .empty span{display:block;font-size:16px;color:var(--muted);margin-top:6px}
 
 /* projection */
-.qrc{position:fixed;right:24px;bottom:24px;z-index:25;background:#fff;color:#1C2833;border-radius:20px;padding:14px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.45);border-bottom:6px solid #EB7F3D}
+.qrc{position:fixed;right:16px;bottom:16px;z-index:25;background:#fff;color:#1C2833;border-radius:20px;padding:14px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.45);border-bottom:6px solid #EB7F3D}
 .qrc div{font-size:14px;font-weight:900;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px}
-.qrc img{width:150px;height:150px;display:block}
+.qrc img{width:130px;height:130px;display:block}
+/* place reservee au code QR (largeur 158px + marges), aucun recouvrement des cartes */
+html.proj main{padding-right:190px}
 
 /* toast */
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:90;width:min(560px,calc(100% - 24px));background:#1C2833;color:#fff;border-radius:16px;padding:8px 8px 8px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
@@ -153,7 +156,8 @@ h3{margin:0;font-size:20px;font-weight:800;line-height:1.2;text-wrap:pretty;over
 
 /* fenetres */
 .bd{position:fixed;inset:0;z-index:70;background:rgba(28,40,51,0.6);display:flex;align-items:center;justify-content:center;padding:16px}
-.dlg{width:min(380px,100%);background:var(--surface);color:var(--ink);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow-y:auto}
+.dlg{width:min(380px,100%);background:var(--surface);color:var(--ink);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px;max-height:calc(100dvh - 32px);overflow-y:auto}
+html.proj .dlg{max-height:100%}
 .dlg h2{margin:0;font-size:22px;font-weight:900}
 .dlg p,.dlg label.d{margin:0;font-size:15px;font-weight:600;color:var(--muted)}
 .dlg .pin{min-height:56px;padding:0 16px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font-size:26px;font-weight:800;letter-spacing:0.4em;text-align:center;width:100%}
@@ -162,6 +166,7 @@ html.soir .err{color:#FF9A93}
 .dlg.qr{width:min(340px,100%);background:#fff;color:#1C2833;text-align:center;align-items:center;border-bottom:8px solid #EB7F3D}
 .dlg.qr h2{font-size:20px}
 .dlg.qr img{width:240px;height:240px;max-width:100%}
+@media (max-height:480px){.dlg.qr img{width:160px;height:160px}}
 .dlg.qr .u{font-size:13px;font-weight:600;color:#4A5560;word-break:break-all}
 .dlg.qr .btn-line{width:100%;border-color:#E8D5C2;color:#1C2833}
 .side{position:fixed;inset:0;z-index:70;background:rgba(28,40,51,0.6);display:flex;justify-content:flex-end}
@@ -341,6 +346,7 @@ function render(){
   var scr={};
   root.querySelectorAll('[data-scroll]').forEach(function(el){scr[el.id]=el.scrollTop;});
   document.documentElement.className=S.proj?'proj':(S.theme==='soir'?'soir':'');
+  applyScale();
   root.innerHTML=view();
   Object.keys(scr).forEach(function(id){var el=$(id);if(el)el.scrollTop=scr[id];});
   if(fid){
@@ -790,6 +796,47 @@ function playSound(type){
   }catch(e){}
 }
 
+// ── Mise a l'echelle telerie et defilement automatique (projection) ──────────
+function applyScale(){
+  var st=document.documentElement.style;
+  if(!S.proj){if(st.zoom)st.zoom='';return;}
+  var k=Math.max(1,Math.min(window.innerWidth/1280,window.innerHeight/720,3.2));
+  k=Math.round(k*100)/100;
+  if(st.zoom!==String(k))st.zoom=k;
+}
+var auto={raf:0,state:'top',until:0,pos:0,last:0,pauseUntil:0};
+function autoNote(){auto.pauseUntil=performance.now()+20000;}
+['mousemove','keydown','touchstart','wheel'].forEach(function(n){
+  window.addEventListener(n,autoNote,{passive:true});
+});
+function autoTick(ts){
+  if(!S.proj){auto.raf=0;return;}
+  auto.raf=requestAnimationFrame(autoTick);
+  var el=document.scrollingElement||document.documentElement;
+  var max=el.scrollHeight-el.clientHeight;
+  var dt=Math.min(100,ts-auto.last);auto.last=ts;
+  if(max<=4){auto.state='top';auto.until=ts+6000;return;}
+  if(ts<auto.pauseUntil){auto.pos=el.scrollTop;auto.until=Math.max(auto.until,ts);return;}
+  if(auto.state==='top'||auto.state==='bottom'){
+    if(ts<auto.until)return;
+    if(auto.state==='bottom'){el.scrollTop=0;auto.state='top';auto.until=ts+6000;return;}
+    auto.state='down';auto.pos=el.scrollTop;
+  }
+  var k=parseFloat(document.documentElement.style.zoom)||1;
+  auto.pos+=40*k*dt/1000;
+  el.scrollTop=auto.pos;
+  if(auto.pos>=max-1){auto.state='bottom';auto.until=ts+6000;}
+}
+function autoStart(){
+  if(auto.raf)return;
+  auto.state='top';auto.until=performance.now()+6000;auto.last=performance.now();
+  auto.raf=requestAnimationFrame(autoTick);
+}
+function autoStop(){
+  if(auto.raf){cancelAnimationFrame(auto.raf);auto.raf=0;}
+}
+window.addEventListener('resize',applyScale);
+
 // ── Ecran allume et plein ecran (projection) ─────────────────────────────────
 function requestWakeLock(){
   if('wakeLock' in navigator){
@@ -813,7 +860,9 @@ function toggleProj(){
     if(S.proj){
       if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
       requestWakeLock();
+      autoStart();
     }else{
+      autoStop();
       releaseWakeLock();
       if(document.fullscreenElement)document.exitFullscreen().catch(function(){});
     }
@@ -1292,6 +1341,10 @@ window.addEventListener('offline',function(){S.online=false;renderSoon();});
 S.myName=lsGet('cv26_myname')||'';
 S.sound=lsGet('cv26_sound')==='1';
 S.theme=lsGet('cv26_theme2')==='soir'?'soir':'clair';
+try{
+  // ?tv=1 : lancement direct en mode projection (le plein ecran exige un geste de l'utilisateur)
+  if(new URLSearchParams(location.search).get('tv')==='1'){S.proj=true;requestWakeLock();autoStart();}
+}catch(e){}
 render();
 Promise.all([loadConfig(),loadVolunteers(),loadTasks()]).then(function(){
   render();
