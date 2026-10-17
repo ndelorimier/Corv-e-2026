@@ -442,7 +442,7 @@ var DATA=[];
 var SECTION_LABELS={a1:'Priorite A1 — Entree du site',a2:'Priorite A2 — Visible par les clients',b:'Priorite B — Operationnel'};
 
 var TYPES={peinture:'🎨 Peinture',jardinage:'🌿 Jardinage',montage:'🔨 Montage',nettoyage:'🧹 Nettoyage',manutention:'📦 Manutention',reparation:'🔧 Reparation'};
-var state={}, f='tous', q='', typeFilter='', coordMode=false, coordPin='', pollTimer=null;
+var state={}, f='tous', q='', typeFilter='', coordMode=false, coordPin='', pollTimer=null, tasksVersion=null;
 var nameDebounce={}, noteDebounce={};
 var myName='', lightMode=false, projMode=false, soundEnabled=false;
 var prevState=null, recentChanges={};
@@ -706,7 +706,7 @@ function playSound(type){
 
 function detectChanges(newState){
   if(!prevState){prevState=JSON.parse(JSON.stringify(newState));return;}
-  var TASK_IDS=['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','c13','c14','c15','c16','c17','c18','c19'];
+  var TASK_IDS=allTaskIds();
   TASK_IDS.forEach(function(id){
     var prev=(prevState[id]||{}).s||'a-faire';
     var curr=(newState[id]||{}).s||'a-faire';
@@ -1061,13 +1061,15 @@ function showEOD(){
 function closeEOD(){var ov=document.getElementById('eod-overlay');if(ov)ov.classList.remove('open');}
 
 function checkCelebration(){
-  var a1a2=['c1','c2','c3','c4','c5','c6','c7','c8','c9'];
-  var allDone=a1a2.every(function(id){return gS(id)==='termine';});
+  var prio=[];
+  DATA.forEach(function(s){if(s.p.charAt(0)==='a')s.tasks.forEach(function(t){prio.push(t.id);});});
+  var allDone=prio.length>0&&prio.every(function(id){return gS(id)==='termine';});
   var banner=document.getElementById('celebrate');
   if(banner)banner.style.display=allDone?'flex':'none';
 }
 function gS(id){return(state[id]||{}).s||'a-faire'}
 function gN(id){return(state[id]||{}).n||''}
+function allTaskIds(){var ids=[];DATA.forEach(function(s){s.tasks.forEach(function(t){ids.push(t.id);});});return ids;}
 function apiBase(){return API_URL||'';}
 
 function setSt(id,v){
@@ -1147,6 +1149,11 @@ function fetchState(){
     .then(r=>r.json())
     .then(function(data){
       if(data.state){
+        if(data.tasksVersion&&data.tasksVersion!==tasksVersion){
+          var first=tasksVersion===null;
+          tasksVersion=data.tasksVersion;
+          if(!first&&!hasOpenInteraction())loadData(render);
+        }
         detectChanges(data.state);
         state=data.state;
         save();
