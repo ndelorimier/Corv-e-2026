@@ -1024,7 +1024,7 @@ function doClaim(id,name,mode){
   }
   if(S.busy[id])return;
   S.busy[id]=true;render();
-  function unbusy(){S.busy[id]=false;render();}
+  function unbusy(){setTimeout(function(){S.busy[id]=false;renderSoon();},1500);} // delai : le bouton change de role juste apres l'action (gants, double appui)
   return call(mode==='join'?'/api/join':'/api/claim',{id:id,name:name}).then(function(r){
     if(!r)return;
     if(!r.ok){
@@ -1051,7 +1051,7 @@ function doFinish(id){
   var t=taskById(id);
   if(S.busy[id])return;
   S.busy[id]=true;render();
-  function unbusy(){S.busy[id]=false;render();}
+  function unbusy(){setTimeout(function(){S.busy[id]=false;renderSoon();},1500);} // delai : le bouton change de role juste apres l'action (gants, double appui)
   return call('/api/complete',{id:id}).then(function(r){
     if(!r)return;
     if(!r.ok)return errorFromRes(r);
