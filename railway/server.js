@@ -9,6 +9,14 @@ const PIN = process.env.COORD_PIN || '2026';
 const DATA_DIR = process.env.DATA_DIR || '/tmp';
 const STATE_FILE = DATA_DIR + '/corvee_state.json';
 const TASKS_FILE = DATA_DIR + '/corvee_tasks.json';
+const VOL_FILE = DATA_DIR + '/corvee_volunteers.json';
+const SEED_FILE = process.env.TASKS_SEED || path.join(__dirname, 'taches-automne.json');
+const EVENT = {
+  titre: process.env.EVENT_TITLE || "Corvée d'automne 2026",
+  date: process.env.EVENT_DATE || '17 octobre',
+  heure: process.env.EVENT_TIME || '9h00',
+};
+let tasksVersion = Date.now();
 
 app.use(cors());
 app.use(express.json());
@@ -43,9 +51,9 @@ const DEFAULT_TASKS = [
 ];
 
 function loadTasks() {
-  try {
-    if (fs.existsSync(TASKS_FILE)) return JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
-  } catch(e) {}
+  for (const f of [TASKS_FILE, SEED_FILE]) {
+    try { if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8')); } catch(e) {}
+  }
   return DEFAULT_TASKS;
 }
 function saveTasks(t) {
@@ -74,6 +82,30 @@ function saveState(state) {
 
 let taskDefs = loadTasks();
 let state = loadState();
+let volunteers = (() => { try { return JSON.parse(fs.readFileSync(VOL_FILE, 'utf8')); } catch(e) { return []; } })();
+
+// ── Evenement et connexion ───────────────────────────────────────────────────
+
+app.get('/api/config', (req, res) => res.json({ event: EVENT }));
+
+app.post('/api/login', (req, res) => {
+  if ((req.body || {}).pin !== PIN) return res.status(403).json({ error: 'Code incorrect' });
+  res.json({ ok: true });
+});
+
+// ── Benevoles ────────────────────────────────────────────────────────────────
+
+app.get('/api/volunteers', (req, res) => res.json({ names: volunteers }));
+
+app.post('/api/volunteers', (req, res) => {
+  const { pin, names } = req.body || {};
+  if (pin !== PIN) return res.status(403).json({ error: 'Code incorrect' });
+  if (!Array.isArray(names)) return res.status(400).json({ error: 'Format invalide' });
+  volunteers = [...new Set(names.map(n => String(n).trim().substring(0, 40)).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'fr'));
+  try { fs.writeFileSync(VOL_FILE, JSON.stringify(volunteers)); } catch(e) {}
+  res.json({ ok: true, names: volunteers });
+});
 
 // ── Definitions de taches ────────────────────────────────────────────────────
 
@@ -87,18 +119,22 @@ app.post('/api/tasks', (req, res) => {
   if (!Array.isArray(tasks)) return res.status(400).json({ error: 'Format invalide' });
   taskDefs = tasks;
   saveTasks(taskDefs);
+  tasksVersion = Date.now();
   res.json({ ok: true, tasks: taskDefs });
 });
 
 // ── Etat des taches ──────────────────────────────────────────────────────────
 
 app.get('/api/state', (req, res) => {
-  res.json({ state, ts: Date.now() });
+  res.json({ state, ts: Date.now(), tasksVersion });
 });
 
 app.post('/api/state', (req, res) => {
   const { pin, id, field, value } = req.body;
   if (pin !== PIN) return res.status(403).json({ error: 'Code incorrect' });
+  if (!getTaskIds().includes(id) || !['s', 'n'].includes(field)) {
+    return res.status(400).json({ error: 'Champ ou tache inconnu' });
+  }
   if (!state[id]) state[id] = {};
   state[id][field] = value;
   saveState(state);
@@ -198,6 +234,7 @@ app.post('/api/reset', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, () => {
-  console.log(`Serveur corvee demarre sur port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Serveur corvee demarre sur port ${PORT}`));
+}
+module.exports = app;
