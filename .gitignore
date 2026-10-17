@@ -5,3 +5,4 @@ node_modules/
 Thumbs.db
 *.pyc
 __pycache__/
+_sauvegardes/

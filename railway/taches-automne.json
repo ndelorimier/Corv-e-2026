@@ -1,0 +1,21 @@
+[
+  {"p":"a1","s":"Priorité A1 — Avant le gel","tasks":[
+    {"id":"f1","nom":"Sortie des quais et des passerelles","team":"4-6 adultes","type":"manutention"},
+    {"id":"f2","nom":"Embarcations — Rentrer canots, kayaks et rabaskas","team":"4-6 personnes","type":"rangement"},
+    {"id":"f3","nom":"Hivernisation — Vidange de l'eau des bâtiments","team":"1-2 adultes","type":"hivernisation"},
+    {"id":"f4","nom":"Mobilier extérieur — Tables et bancs à l'abri","team":"3-4 personnes","type":"rangement"}
+  ]},
+  {"p":"a2","s":"Priorité A2 — Fermeture des bâtiments","tasks":[
+    {"id":"f5","nom":"Volets et fenêtres — Fermeture des chalets","team":"2-3 adultes","type":"hivernisation"},
+    {"id":"f6","nom":"Gouttières — Nettoyage","team":"2 adultes","type":"nettoyage"},
+    {"id":"f7","nom":"Dortoirs — Matelas surélevés et ménage","team":"2-4 personnes","type":"nettoyage"},
+    {"id":"f8","nom":"Cafétéria — Ménage de fermeture","team":"2-3 personnes","type":"nettoyage"}
+  ]},
+  {"p":"b","s":"Priorité B — Terrain","tasks":[
+    {"id":"f9","nom":"Ramassage des feuilles — Entrée et sentiers","team":"4-6 personnes","type":"jardinage"},
+    {"id":"f10","nom":"Tentes prospecteurs — Démontage","team":"2-4 adultes","type":"montage"},
+    {"id":"f11","nom":"Jardins — Fermeture de saison","team":"2-3 personnes","type":"jardinage"},
+    {"id":"f12","nom":"Bois de chauffage — Cordage","team":"3-4 personnes","type":"manutention"},
+    {"id":"f13","nom":"Conteneur — Remplissage","team":"3-4 adultes","type":"manutention"}
+  ]}
+]
