@@ -80,3 +80,11 @@ test('reopen remet en cours une tache terminee', async () => {
   assert.strictEqual((await r.json()).state.f3.s, 'en-cours');
   assert.strictEqual((await post('/api/reopen', { id: 'f3' })).status, 409);
 });
+
+test('liberer puis reprendre un chantier repart sans anciens equipiers', async () => {
+  await post('/api/claim', { id: 'f4', name: 'Dee' });
+  await post('/api/join', { id: 'f4', name: 'Eve' });
+  await post('/api/release', { id: 'f4' });
+  const d = await (await post('/api/claim', { id: 'f4', name: 'Fox' })).json();
+  assert.deepStrictEqual(d.state.f4.extras, []);
+});

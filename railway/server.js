@@ -158,6 +158,7 @@ app.post('/api/claim', (req, res) => {
   if (state[id].s !== 'a-faire') return res.status(409).json({ error: 'Tache deja prise', state });
   state[id].s = 'en-cours';
   state[id].n = name.trim();
+  state[id].extras = [];
   saveState(state);
   res.json({ ok: true, state });
 });
@@ -169,6 +170,7 @@ app.post('/api/release', (req, res) => {
   if (state[id].s === 'termine') return res.status(409).json({ error: 'Tache terminee — seul le coordinateur peut la modifier' });
   state[id].s = 'a-faire';
   state[id].n = '';
+  state[id].extras = [];
   saveState(state);
   res.json({ ok: true, state });
 });
