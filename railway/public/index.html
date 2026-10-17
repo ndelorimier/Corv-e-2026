@@ -326,8 +326,8 @@ body.light .eod-sec-title{color:rgba(0,0,0,0.4);}
 <div class="hdr">
   <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgkAAALaCAYAAAC7yMB5AAAACXBIWXMAABcRAAAXEQHKJvM/AAAgAElEQVR4nO3dO24b2Rru/acPdsZAPgBz8eQEpJ4AxR6BtROmokdg9QhcHkHLIzCVMml5BF3iBFoCmG8qJ/CZAWN/QS3atFyUimRVvevy/wFCX0yxXvNS9dS6/vbt2zcBAAA893+sCwAAAH4iJAAAgFKEBAAAUIqQAAAAShESAABAKUICAAAoRUgAAAClCAkAAKAUIQEAAJQiJAAAgFKEBAAAUIqQAAAAShESAABAKUICAAAoRUgAAAClCAkAAKAUIQEAAJQiJAAAgFKEBAAAUIqQAAAAShESAABAKUICAAAoRUgAAAClCAkAAKAUIQEAAJQiJAAAgFL/sS4AwOvW8+kbSefuPx86/dFXy3oApOG3b9++WdcA4AUuIDxIOnX/ayXpstMf5WZFAUgC3Q2A/+70IyBI0omkf9bz6aVRPQASQUsC4LH1fDqU9M+OP15JGnb6o4f2KgKQEloSAL+NX/izE0kT1x0BALUjJAB+e61L4UxS1kIdABJESAD8dlLhMe/X8+n56w8DgP0QEoA43FgXACA+hAQgDhfr+XRsXQSAuBASAL897fHYGwYxAqgTIQHwW77HY08kXTdUB4AEERIAv03q+XRsXQSAuBASAL897fHYGwYxAqgTIQHwW77HY08kXTdUB4AEERIAv032fPz1ej7tNVAHgAQREgCPuaWX9+lyOBFTIgHUhJAA+G/fLoQrWhMA1IGQAHiu0x/dSbrf89cmDZQCIDGEBCAM+7YmXLh9HwDgYIQEIABuE6ePe/5a1kApABLCLpBAQNbz6YOK/Rqq+sMNfgSAvdGSAITlUsUW0VVlDdUBIAGEBCAsnf5oof0u/IxNAHAwQgIQmE5/dKP9ZjuMGyoFQOQICUCYxns8lnUTAByEkAAEyHU77DPbIWumEgAxIyQA4bpR9UGMV+wQCWBfhAQgUJ3+6KuKoFAVO0QC2AshAQjbPq0J4wbrABAhQgIQsD1bE07X8+m4wXIARIaQAISP1gQAjSAkAIHbszXhYj2fnjdZD4B4EBKAODCAEUDtCAlABFxrwm3Fh18yHRJAFYQEIB5ZxcedqNgoCgBeREgAIuFWYay6p8O4uUoAxIKQAMRlUvFxF+znAOA1hAQgIp3+aKLq0yHpcgDwIkICEJ9JxccxywHAiwgJQHzWKzBiTQSQHkICkJjOf5TvZG8VACkiJADpWezxWN+TqZBIHiEBSM9ij8dea7gGAH8hJADpWezxWN+TqZBIHiEBSE++x2N9T6ZCInmEBCBdta4eBXiOkAAk6tmtGcDe2lYPAL6gJQFIU8/6ORkMhgBcAQNJWksDgAAAAABJRU5ErkJggg==" alt="Camp">
   <div>
-    <div class="hdr-title">Corvee d'ouverture 2026</div>
-    <div class="hdr-sub">Camp Bruchesi &nbsp;&middot;&nbsp; 9 mai &nbsp;&middot;&nbsp; 9h00</div>
+    <div class="hdr-title" id="hdr-title">Corvée</div>
+    <div class="hdr-sub" id="hdr-sub">Camp Bruchési</div>
   </div>
   <div class="hdr-right">
     <div class="sync-badge" id="sync-badge">Statique</div>
@@ -414,7 +414,7 @@ body.light .eod-sec-title{color:rgba(0,0,0,0.4);}
 <div class="eod-overlay" id="eod-overlay">
   <div class="eod-inner">
     <div class="eod-title">🎉 Corvee terminee !</div>
-    <div class="eod-camp">Camp Bruchesi &nbsp;&middot;&nbsp; 9 mai 2026</div>
+    <div class="eod-camp" id="eod-camp">Camp Bruchési</div>
     <div class="eod-stats" id="eod-stats"></div>
     <div class="eod-sec-title">Top benevoles</div>
     <div id="eod-lb"></div>
@@ -429,6 +429,7 @@ body.light .eod-sec-title{color:rgba(0,0,0,0.4);}
 </div>
 
 <script>
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 // ─── CONFIGURATION ────────────────────────────────────────────────────────────
 // Si servi directement par Railway : laisser vide (utilise URLs relatives)
 // Si utilise en fichier standalone : mettre l'URL Railway ici
@@ -445,6 +446,19 @@ var state={}, f='tous', q='', typeFilter='', coordMode=false, coordPin='', pollT
 var nameDebounce={}, noteDebounce={};
 var myName='', lightMode=false, projMode=false, soundEnabled=false;
 var prevState=null, recentChanges={};
+
+var EVENT={titre:'Corvée',date:'',heure:''};
+function setText(id,txt){var el=document.getElementById(id);if(el)el.textContent=txt;}
+function applyEvent(){
+  document.title=EVENT.titre+' — Camp Bruchési';
+  setText('hdr-title',EVENT.titre);
+  setText('hdr-sub','Camp Bruchési · '+EVENT.date+' · '+EVENT.heure);
+  setText('eod-camp','Camp Bruchési · '+EVENT.date);
+}
+function loadConfig(){
+  return fetch(apiBase()+'/api/config').then(function(r){return r.json();})
+    .then(function(d){if(d.event)EVENT=d.event;applyEvent();}).catch(function(){});
+}
 
 function load(){
   try{state=JSON.parse(localStorage.getItem('cv26b')||'{}')}catch(e){state={}}
@@ -923,8 +937,8 @@ function openPrint(){
     '<div class="print-hdr">'+
       (logoSrc?'<img class="print-logo" src="'+logoSrc+'" alt="Camp">':'')+
       '<div class="hdr-text">'+
-        '<div class="hdr-title">Corvée d\'ouverture 2026</div>'+
-        '<div class="hdr-sub">Camp Bruchési &nbsp;·&nbsp; 9 mai 2026 &nbsp;·&nbsp; 9h00 &nbsp;&nbsp; — &nbsp;&nbsp; Imprimé le '+dateStr+' à '+timeStr+'</div>'+
+        '<div class="hdr-title">'+esc(EVENT.titre)+'</div>'+
+        '<div class="hdr-sub">Camp Bruchési &nbsp;·&nbsp; '+esc(EVENT.date)+' &nbsp;·&nbsp; '+esc(EVENT.heure)+' &nbsp;&nbsp; — &nbsp;&nbsp; Imprimé le '+dateStr+' à '+timeStr+'</div>'+
       '</div>'+
       '<div class="hdr-stats">'+
         '<div class="stat-pill stat-done"><div class="stat-n">'+done+'</div><div class="stat-l">Terminés</div></div>'+
@@ -933,10 +947,10 @@ function openPrint(){
       '</div>'+
     '</div>'+
     tasksHtml+
-    '<div class="print-footer">Corvée d\'ouverture Camp Bruchési 2026 &mdash; '+total+' chantiers au total</div>';
+    '<div class="print-footer">'+esc(EVENT.titre)+' — Camp Bruchési &mdash; '+total+' chantiers au total</div>';
 
   var w=window.open('','_blank','width=900,height=700');
-  if(w){w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Corvee Bruchesi 2026 — Impression</title><style>'+css+'</style></head><body>'+body+'</body></html>');w.document.close();}
+  if(w){w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+esc(EVENT.titre)+' — Impression</title><style>'+css+'</style></head><body>'+body+'</body></html>');w.document.close();}
 }
 
 function parseTeamMax(teamStr){
@@ -1178,21 +1192,24 @@ function setTypeFilter(v,btn){
 }
 
 function toggleCoord(){
-  if(!coordMode){
-    var pin=prompt('Code coordinateur (4 chiffres):');
-    if(pin!=='2026')return;
-    coordPin=pin;
-    coordMode=true;
-    document.body.classList.add('coord-mode');
-    document.getElementById('coord-btn').textContent='Mode benevole';
-    document.getElementById('coord-btn').style.color='#EB7F3D';
-  }else{
-    coordMode=false;
-    coordPin='';
+  var btn=document.getElementById('coord-btn');
+  if(coordMode){
+    coordMode=false;coordPin='';
     document.body.classList.remove('coord-mode');
-    document.getElementById('coord-btn').textContent='Mode coordinateur';
-    document.getElementById('coord-btn').style.color='';
+    btn.textContent='Mode coordonnateur';btn.style.color='';
+    return;
   }
+  var pin=prompt('Code coordonnateur :');
+  if(!pin)return;
+  fetch(apiBase()+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pin})})
+    .then(function(r){
+      if(!r.ok){alert('Code incorrect');return;}
+      coordPin=pin;coordMode=true;
+      document.body.classList.add('coord-mode');
+      btn.textContent='Mode bénévole';btn.style.color='#EB7F3D';
+      render();
+    })
+    .catch(function(){alert('Serveur injoignable');});
 }
 
 function render(){
@@ -1347,6 +1364,7 @@ function render(){
 
 load();
 render();
+loadConfig();
 loadData(function(){render();startPolling();});
 </script>
 </body>
