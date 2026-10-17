@@ -359,6 +359,7 @@ body.light .hdr img{filter:none;mix-blend-mode:multiply;}
     onkeydown="if(event.key==='Enter')sendBroadcast()">
   <button class="bc-send" onclick="sendBroadcast()">Diffuser 📢</button>
   <button class="bc-clear" onclick="clearBroadcast()">Effacer</button>
+  <button class="bc-clear" onclick="editVolunteers()">👥 Bénévoles</button>
 </div>
 <div class="broadcast-bar" id="broadcast-bar">
   <span class="bc-msg" id="bc-msg"></span>
@@ -379,7 +380,7 @@ body.light .hdr img{filter:none;mix-blend-mode:multiply;}
 <div class="content">
   <div class="myname-wrap">
     <label for="myname-input">Mon prénom :</label>
-    <input class="myname-input" id="myname-input" type="text" placeholder="Entre ton prénom pour voir tes chantiers..." maxlength="40" oninput="setMyName(this.value)">
+    <input class="myname-input" id="myname-input" list="benevoles" type="text" placeholder="Entre ton prénom pour voir tes chantiers..." maxlength="40" oninput="setMyName(this.value)">
   </div>
   <div class="find-wrap">
     <input type="search" id="search" placeholder="Chercher un bénévole ou un chantier..." oninput="doSearch(this.value)">
@@ -458,6 +459,19 @@ function applyEvent(){
   setText('hdr-title',EVENT.titre);
   setText('hdr-sub','Camp Bruchési · '+EVENT.date+' · '+EVENT.heure);
   setText('eod-camp','Camp Bruchési · '+EVENT.date);
+}
+function loadVolunteers(){
+  fetch(apiBase()+'/api/volunteers').then(function(r){return r.json();}).then(function(d){
+    var dl=document.getElementById('benevoles');
+    if(dl)dl.innerHTML=(d.names||[]).map(function(n){return'<option value="'+esc(n)+'">';}).join('');
+  }).catch(function(){});
+}
+function editVolunteers(){
+  var cur=Array.from(document.querySelectorAll('#benevoles option')).map(function(o){return o.value;}).join(', ');
+  var txt=prompt('Prénoms des bénévoles, séparés par des virgules :',cur);
+  if(txt===null)return;
+  fetch(apiBase()+'/api/volunteers',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({pin:coordPin,names:txt.split(',')})}).then(loadVolunteers);
 }
 function loadConfig(){
   return fetch(apiBase()+'/api/config').then(function(r){return r.json();})
@@ -1271,7 +1285,7 @@ function render(){
         var prefill=myName?(' value="'+myName.replace(/"/g,'&quot;')+'"'):'';
         claimHtml='<button class="claim-btn" onclick="claimTask(\''+t.id+'\')">Je prends ce chantier</button>'+
           '<div class="claim-form" id="claim-form-'+t.id+'">'+
-          '<input class="claim-input" id="claim-input-'+t.id+'" placeholder="Ton prénom..." maxlength="40"'+prefill+' '+
+          '<input class="claim-input" id="claim-input-'+t.id+'" list="benevoles" placeholder="Ton prénom..." maxlength="40"'+prefill+' '+
             'onkeydown="if(event.key===\'Enter\')submitClaim(\''+t.id+'\')">'+
           '<button class="claim-submit" id="claim-submit-'+t.id+'" onclick="submitClaim(\''+t.id+'\')">Confirmer</button>'+
           '<button class="claim-cancel" onclick="claimTask(\''+t.id+'\')">&#x2715;</button>'+
@@ -1336,7 +1350,7 @@ function render(){
             ' <button class="extra-remove" data-name="'+esc(en)+'" onclick="leaveTask(\''+t.id+'\',this.dataset.name)" title="Retirer">&#x2715;</button></span>';
         }).join('')+'</div>':'')+
         (v==='en-cours'?'<div class="join-form" id="join-form-'+t.id+'">'+
-          '<input class="claim-input" id="join-input-'+t.id+'" placeholder="Ton prénom..." maxlength="40"'+
+          '<input class="claim-input" id="join-input-'+t.id+'" list="benevoles" placeholder="Ton prénom..." maxlength="40"'+
             (myName?' value="'+myName.replace(/"/g,'&quot;')+'"':'')+
             ' onkeydown="if(event.key===\'Enter\')submitJoin(\''+t.id+'\')">'+
           '<button class="claim-submit" id="join-submit-'+t.id+'" onclick="submitJoin(\''+t.id+'\')">Confirmer</button>'+
@@ -1383,7 +1397,9 @@ function render(){
 load();
 render();
 loadConfig();
+loadVolunteers();
 loadData(function(){render();startPolling();});
 </script>
+<datalist id="benevoles"></datalist>
 </body>
 </html>
