@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Corvee Camp Bruchesi 2026</title>
+<title>Corvée Camp Bruchési</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:#1C2833;color:#fff;min-height:100vh;}
@@ -319,31 +319,43 @@ body.light .eod-lb-row{background:rgba(0,0,0,0.04);}
 body.light .eod-lb-sub{color:rgba(0,0,0,0.35);}
 body.light .eod-close{color:rgba(0,0,0,0.4);border-color:rgba(0,0,0,0.15);}
 body.light .eod-sec-title{color:rgba(0,0,0,0.4);}
+/* Mobile */
+.hdr{flex-wrap:wrap;}
+.hdr-right{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:flex-end;}
+.card-bottom{flex-wrap:wrap;}
+.claim-btn,.join-btn,.release-btn,.complete-btn,.claim-submit,.claim-cancel{min-height:40px;}
+.release-btn,.complete-btn{font-size:13px;padding:6px 14px;}
+@media (max-width:480px){
+  .hdr img{height:40px;}
+  .hdr-title{font-size:16px;}
+  .card-name{flex-basis:100%;order:-1;}
+}
+.hdr img{filter:invert(1);mix-blend-mode:screen;}
+body.light .hdr img{filter:none;mix-blend-mode:multiply;}
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgkAAALaCAYAAAC7yMB5AAAACXBIWXMAABcRAAAXEQHKJvM/AAAgAElEQVR4nO3dO24b2Rru/acPdsZAPgBz8eQEpJ4AxR6BtROmokdg9QhcHkHLIzCVMml5BF3iBFoCmG8qJ/CZAWN/QS3atFyUimRVvevy/wFCX0yxXvNS9dS6/vbt2zcBAAA893+sCwAAAH4iJAAAgFKEBAAAUIqQAAAAShESAABAKUICAAAoRUgAAAClCAkAAKAUIQEAAJQiJAAAgFKEBAAAUIqQAAAAShESAABAKUICAAAoRUgAAAClCAkAAKAUIQEAAJQiJAAAgFKEBAAAUIqQAAAAShESAABAKUICAAAoRUgAAAClCAkAAKAUIQEAAJQiJAAAgFL/sS4AwOvW8+kbSefuPx86/dFXy3oApOG3b9++WdcA4AUuIDxIOnX/ayXpstMf5WZFAUgC3Q2A/+70IyBI0omkf9bz6aVRPQASQUsC4LH1fDqU9M+OP15JGnb6o4f2KgKQEloSAL+NX/izE0kT1x0BALUjJAB+e61L4UxS1kIdABJESAD8dlLhMe/X8+n56w8DgP0QEoA43FgXACA+hAQgDhfr+XRsXQSAuBASAL897fHYGwYxAqgTIQHwW77HY08kXTdUB4AEERIAv03q+XRsXQSAuBASAL897fHYGwYxAqgTIQHwW77HY08kXTdUB4AEERIAv032fPz1ej7tNVAHgAQREgCPuaWX9+lyOBFTIgHUhJAA+G/fLoQrWhMA1IGQAHiu0x/dSbrf89cmDZQCIDGEBCAM+7YmXLh9HwDgYIQEIABuE6ePe/5a1kApABLCLpBAQNbz6YOK/Rqq+sMNfgSAvdGSAITlUsUW0VVlDdUBIAGEBCAsnf5oof0u/IxNAHAwQgIQmE5/dKP9ZjuMGyoFQOQICUCYxns8lnUTAByEkAAEyHU77DPbIWumEgAxIyQA4bpR9UGMV+wQCWBfhAQgUJ3+6KuKoFAVO0QC2AshAQjbPq0J4wbrABAhQgIQsD1bE07X8+m4wXIARIaQAISP1gQAjSAkAIHbszXhYj2fnjdZD4B4EBKAODCAEUDtCAlABFxrwm3Fh18yHRJAFYQEIB5ZxcedqNgoCgBeREgAIuFWYay6p8O4uUoAxIKQAMRlUvFxF+znAOA1hAQgIp3+aKLq0yHpcgDwIkICEJ9JxccxywHAiwgJQHzWKzBiTQSQHkICkJjOf5TvZG8VACkiJADpWezxWN+TqZBIHiEBSM9ij8dea7gGAH8hJADpWezxWN+TqZBIHiEBSE++x2N9T6ZCInmEBCBdta4eBXiOkAAk6tmtGcDe2lYPAL6gJQFIU8/6ORkMhgBcAQNJWksDgAAAAABJRU5ErkJggg==" alt="Camp">
+  <img src="logo.png" alt="Camp Bruchési">
   <div>
     <div class="hdr-title" id="hdr-title">Corvée</div>
     <div class="hdr-sub" id="hdr-sub">Camp Bruchési</div>
   </div>
   <div class="hdr-right">
     <div class="sync-badge" id="sync-badge">Statique</div>
-    <br>
     <button class="qr-btn" onclick="showQR()" title="Afficher le QR code">📱</button>
     <button class="sound-btn" onclick="toggleSound()" id="sound-btn" title="Sons de notification">🔔</button>
     <button class="proj-btn" onclick="toggleProjection()" id="proj-btn" title="Mode projection">🖥️</button>
     <button class="print-btn" onclick="openPrint()" title="Version imprimable">🖨️</button>
     <button class="lb-btn" id="lb-btn" onclick="toggleLeaderboard()" title="Tableau des scores">🏆</button>
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Changer le theme">🌙</button>
-    <button class="eod-btn" onclick="showEOD()" title="Resume de fin de journee">Fin de journee</button>
-    <button class="coord-toggle" onclick="toggleCoord()" id="coord-btn">Mode coordinateur</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Changer le thème">🌙</button>
+    <button class="eod-btn" onclick="showEOD()" title="Résumé de fin de journée">Fin de journée</button>
+    <button class="coord-toggle" onclick="toggleCoord()" id="coord-btn">Mode coordonnateur</button>
   </div>
 </div>
 <div class="bc-form">
-  <input class="bc-input" id="bc-input" placeholder="Message pour tous les benevoles..." maxlength="200"
+  <input class="bc-input" id="bc-input" placeholder="Message pour tous les bénévoles..." maxlength="200"
     onkeydown="if(event.key==='Enter')sendBroadcast()">
   <button class="bc-send" onclick="sendBroadcast()">Diffuser 📢</button>
   <button class="bc-clear" onclick="clearBroadcast()">Effacer</button>
@@ -354,40 +366,32 @@ body.light .eod-sec-title{color:rgba(0,0,0,0.4);}
 </div>
 
 <div class="stats">
-  <div class="stat"><div class="stat-n g" id="nd">0</div><div class="stat-l">Termines</div></div>
+  <div class="stat"><div class="stat-n g" id="nd">0</div><div class="stat-l">Terminés</div></div>
   <div class="stat"><div class="stat-n o" id="np">0</div><div class="stat-l">En cours</div></div>
   <div class="stat"><div class="stat-n gr" id="nt">0</div><div class="stat-l">Disponibles</div></div>
 </div>
 
 <div class="progress-wrap">
-  <div class="progress-label"><span>Progression de la journee</span><span id="pct">0%</span></div>
+  <div class="progress-label"><span>Progression de la journée</span><span id="pct">0%</span></div>
   <div class="progress-bar"><div class="progress-fill" id="pbar" style="width:0%"></div></div>
 </div>
 
 <div class="content">
   <div class="myname-wrap">
-    <label for="myname-input">Mon prenom :</label>
-    <input class="myname-input" id="myname-input" type="text" placeholder="Entre ton prenom pour voir tes chantiers..." maxlength="40" oninput="setMyName(this.value)">
+    <label for="myname-input">Mon prénom :</label>
+    <input class="myname-input" id="myname-input" type="text" placeholder="Entre ton prénom pour voir tes chantiers..." maxlength="40" oninput="setMyName(this.value)">
   </div>
   <div class="find-wrap">
-    <input type="search" id="search" placeholder="Chercher un benevole ou un chantier..." oninput="doSearch(this.value)">
+    <input type="search" id="search" placeholder="Chercher un bénévole ou un chantier..." oninput="doSearch(this.value)">
   </div>
   <div class="filters">
     <button class="filter-btn active" onclick="setFilter('tous',this)">Tous</button>
     <button class="filter-btn" onclick="setFilter('a-faire',this)">Disponibles</button>
     <button class="filter-btn" onclick="setFilter('en-cours',this)">En cours</button>
-    <button class="filter-btn" onclick="setFilter('termine',this)">Termines</button>
+    <button class="filter-btn" onclick="setFilter('termine',this)">Terminés</button>
     <button class="filter-btn" id="filter-mine" style="display:none;border-color:#8BC6F1;color:#8BC6F1;" onclick="setFilter('mine',this)">Mes chantiers</button>
   </div>
-  <div class="type-filters">
-    <button class="type-btn" onclick="setTypeFilter('',this)">Tous les types</button>
-    <button class="type-btn" onclick="setTypeFilter('peinture',this)">🎨 Peinture</button>
-    <button class="type-btn" onclick="setTypeFilter('jardinage',this)">🌿 Jardinage</button>
-    <button class="type-btn" onclick="setTypeFilter('montage',this)">🔨 Montage</button>
-    <button class="type-btn" onclick="setTypeFilter('nettoyage',this)">🧹 Nettoyage</button>
-    <button class="type-btn" onclick="setTypeFilter('manutention',this)">📦 Manutention</button>
-    <button class="type-btn" onclick="setTypeFilter('reparation',this)">🔧 Reparation</button>
-  </div>
+  <div class="type-filters" id="type-filters"></div>
   <div id="board"></div>
 </div>
 
@@ -413,10 +417,10 @@ body.light .eod-sec-title{color:rgba(0,0,0,0.4);}
 
 <div class="eod-overlay" id="eod-overlay">
   <div class="eod-inner">
-    <div class="eod-title">🎉 Corvee terminee !</div>
+    <div class="eod-title">🎉 Corvée terminée !</div>
     <div class="eod-camp" id="eod-camp">Camp Bruchési</div>
     <div class="eod-stats" id="eod-stats"></div>
-    <div class="eod-sec-title">Top benevoles</div>
+    <div class="eod-sec-title">Top bénévoles</div>
     <div id="eod-lb"></div>
     <button class="eod-close" onclick="closeEOD()">Fermer</button>
   </div>
@@ -424,7 +428,7 @@ body.light .eod-sec-title{color:rgba(0,0,0,0.4);}
 
 <div class="celebrate" id="celebrate">
   <span>&#127881;</span>
-  <span>Toutes les priorites A sont terminees &mdash; Bravo l&rsquo;equipe !</span>
+  <span>Toutes les priorités A sont terminées &mdash; Bravo l&rsquo;équipe !</span>
   <span>&#127881;</span>
 </div>
 
@@ -439,9 +443,9 @@ var POLL_MS = 15000; // refresh toutes les 15 secondes
 // ──────────────────────────────────────────────────────────────────────────────
 
 var DATA=[];
-var SECTION_LABELS={a1:'Priorite A1 — Entree du site',a2:'Priorite A2 — Visible par les clients',b:'Priorite B — Operationnel'};
+var SECTION_LABELS={a1:'Priorité A1 — Entrée du site',a2:'Priorité A2 — Visible par les clients',b:'Priorité B — Opérationnel'};
 
-var TYPES={peinture:'🎨 Peinture',jardinage:'🌿 Jardinage',montage:'🔨 Montage',nettoyage:'🧹 Nettoyage',manutention:'📦 Manutention',reparation:'🔧 Reparation'};
+var TYPES={peinture:'🎨 Peinture',jardinage:'🌿 Jardinage',montage:'🔨 Montage',nettoyage:'🧹 Nettoyage',manutention:'📦 Manutention',reparation:'🔧 Réparation',rangement:'🗄️ Rangement',hivernisation:'❄️ Hivernisation'};
 var state={}, f='tous', q='', typeFilter='', coordMode=false, coordPin='', pollTimer=null, tasksVersion=null;
 var nameDebounce={}, noteDebounce={};
 var myName='', lightMode=false, projMode=false, soundEnabled=false;
@@ -558,7 +562,7 @@ function saveTaskEdit(id){
 }
 
 function deleteTask(id){
-  if(!confirm('Supprimer ce chantier definitivement?'))return;
+  if(!confirm('Supprimer ce chantier définitivement ?'))return;
   DATA.forEach(function(sec){
     sec.tasks=sec.tasks.filter(function(t){return t.id!==id;});
   });
@@ -588,7 +592,7 @@ function setMyName(v){
 }
 
 function completeTask(id){
-  if(!confirm('Marquer ce chantier comme TERMINE?'))return;
+  if(!confirm('Marquer ce chantier comme TERMINÉ ?'))return;
   fetch(apiBase()+'/api/complete',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({id:id})
@@ -603,7 +607,7 @@ function completeTask(id){
 }
 
 function releaseTask(id){
-  if(!confirm('Liberer ce chantier et le remettre disponible?'))return;
+  if(!confirm('Libérer ce chantier et le remettre disponible ?'))return;
   fetch(apiBase()+'/api/release',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -850,7 +854,7 @@ function openPrint(){
   var logoSrc=(document.querySelector('.hdr img')||{}).src||'';
   var total=0,done=0,prog=0,todo=0;
   DATA.forEach(function(s){s.tasks.forEach(function(t){total++;var v=gS(t.id);if(v==='termine')done++;else if(v==='en-cours')prog++;else todo++;});});
-  var typeLabels={peinture:'🎨 Peinture',jardinage:'🌿 Jardinage',montage:'🔨 Montage',nettoyage:'🧹 Nettoyage',manutention:'📦 Manutention',reparation:'🔧 Réparation'};
+  var typeLabels=TYPES;
   var secColors={a1:'#C05A15',a2:'#1E6895',b:'#3D5A6A'};
   var now=new Date();
   var dateStr=now.toLocaleDateString('fr-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -1016,7 +1020,7 @@ function buildLeaderboard(){
 function renderLeaderboard(){
   var body=document.getElementById('lb-body');if(!body)return;
   var rows=buildLeaderboard();
-  if(!rows.length){body.innerHTML='<div class="lb-empty">Aucun benevole inscrit pour l\'instant</div>';return;}
+  if(!rows.length){body.innerHTML='<div class="lb-empty">Aucun bénévole inscrit pour l\'instant</div>';return;}
   var medals=['🥇','🥈','🥉'];
   body.innerHTML=rows.map(function(r,i){
     return'<div class="lb-row">'+
@@ -1041,14 +1045,14 @@ function showEOD(){
   DATA.forEach(function(s){s.tasks.forEach(function(t){total++;var v=gS(t.id);if(v==='termine')done++;else if(v==='en-cours')prog++;else todo++;});});
   var statsEl=document.getElementById('eod-stats');
   if(statsEl)statsEl.innerHTML=
-    '<div class="eod-stat"><div class="eod-stat-n g">'+done+'</div><div class="eod-stat-l">Termines</div></div>'+
+    '<div class="eod-stat"><div class="eod-stat-n g">'+done+'</div><div class="eod-stat-l">Terminés</div></div>'+
     '<div class="eod-stat"><div class="eod-stat-n o">'+prog+'</div><div class="eod-stat-l">En cours</div></div>'+
     '<div class="eod-stat"><div class="eod-stat-n gr">'+todo+'</div><div class="eod-stat-l">Disponibles</div></div>';
   var medals=['🥇','🥈','🥉'];
   var lbRows=buildLeaderboard();
   var lbEl=document.getElementById('eod-lb');
   if(lbEl)lbEl.innerHTML=!lbRows.length
-    ?'<div style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:20px">Aucun benevole inscrit</div>'
+    ?'<div style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:20px">Aucun bénévole inscrit</div>'
     :lbRows.slice(0,10).map(function(r,i){
       return'<div class="eod-lb-row">'+
         '<div class="eod-lb-medal">'+(medals[i]||'')+'</div>'+
@@ -1181,7 +1185,7 @@ function startPolling(){
 }
 
 function nxt(c){return c=='a-faire'?'en-cours':(c=='en-cours'?'termine':'a-faire')}
-function lbl(s){return s=='a-faire'?'Disponible':(s=='en-cours'?'En cours':'Termine')}
+function lbl(s){return s=='a-faire'?'Disponible':(s=='en-cours'?'En cours':'Terminé')}
 function cls(s){return s=='a-faire'?'st-af':(s=='en-cours'?'st-ec':'st-tm')}
 
 function setFilter(v,btn){
@@ -1221,6 +1225,12 @@ function toggleCoord(){
 }
 
 function render(){
+  var tf=document.getElementById('type-filters');
+  if(tf&&!tf.dataset.ready){
+    tf.innerHTML='<button class="type-btn active" onclick="setTypeFilter(\'\',this)">Tous les types</button>'+
+      Object.keys(TYPES).map(function(k){return'<button class="type-btn" onclick="setTypeFilter(\''+k+'\',this)">'+TYPES[k]+'</button>';}).join('');
+    tf.dataset.ready='1';
+  }
   var total=0,done=0,prog=0,todo=0;
   DATA.forEach(s=>s.tasks.forEach(t=>{total++;var v=gS(t.id);if(v=='termine')done++;else if(v=='en-cours')prog++;else todo++}));
   document.getElementById('nd').textContent=done;
@@ -1249,7 +1259,7 @@ function render(){
       var hid=(!mq||!mf||!mt)?'hide':'';
       var hl=(q&&mq&&mf)?'hl':'';
       var mineClass=isMine?'mine':'';
-      var nameHtml=nm?('<span class="card-name">'+esc(nm)+'</span>'):('<span class="card-name empty">Non assigne</span>');
+      var nameHtml=nm?('<span class="card-name">'+esc(nm)+'</span>'):('<span class="card-name empty">Non assigné</span>');
       var extras=gExtras(t.id);
       var teamMax=parseTeamMax(t.team);
       var assignedCount=v==='a-faire'?0:1+extras.length;
@@ -1261,7 +1271,7 @@ function render(){
         var prefill=myName?(' value="'+myName.replace(/"/g,'&quot;')+'"'):'';
         claimHtml='<button class="claim-btn" onclick="claimTask(\''+t.id+'\')">Je prends ce chantier</button>'+
           '<div class="claim-form" id="claim-form-'+t.id+'">'+
-          '<input class="claim-input" id="claim-input-'+t.id+'" placeholder="Ton prenom..." maxlength="40"'+prefill+' '+
+          '<input class="claim-input" id="claim-input-'+t.id+'" placeholder="Ton prénom..." maxlength="40"'+prefill+' '+
             'onkeydown="if(event.key===\'Enter\')submitClaim(\''+t.id+'\')">'+
           '<button class="claim-submit" id="claim-submit-'+t.id+'" onclick="submitClaim(\''+t.id+'\')">Confirmer</button>'+
           '<button class="claim-cancel" onclick="claimTask(\''+t.id+'\')">&#x2715;</button>'+
@@ -1269,8 +1279,8 @@ function render(){
       }
       var releaseHtml='';
       if(v==='en-cours'){
-        releaseHtml='<button class="release-btn" onclick="releaseTask(\''+t.id+'\')">Liberer</button>'+
-          '<button class="complete-btn" onclick="completeTask(\''+t.id+'\')">✅ Termine!</button>';
+        releaseHtml='<button class="release-btn" onclick="releaseTask(\''+t.id+'\')">Libérer</button>'+
+          '<button class="complete-btn" onclick="completeTask(\''+t.id+'\')">✅ Terminé !</button>';
       }
       var isNew=recentChanges[t.id]&&recentChanges[t.id]>Date.now();
       var newBadge=isNew?'<span class="new-badge">Nouveau</span>':'';
@@ -1289,7 +1299,7 @@ function render(){
         '<div class="edit-row"><span class="edit-lbl">Nom</span>'+
         '<input class="edit-inp" id="ei-nom-'+t.id+'" value="'+esc(t.nom)+'" placeholder="Nom du chantier..." '+
           'onkeydown="if(event.key===\'Enter\')saveTaskEdit(\''+t.id+'\')"></div>'+
-        '<div class="edit-row"><span class="edit-lbl">Equipe</span>'+
+        '<div class="edit-row"><span class="edit-lbl">Équipe</span>'+
         '<input class="edit-inp" id="ei-team-'+t.id+'" value="'+esc(t.team)+'" placeholder="ex: 2-3 adultes">'+
         '<span class="edit-lbl" style="width:auto;margin-left:8px;">Section</span>'+
         '<select class="edit-sel" id="ei-sec-'+t.id+'">'+
@@ -1300,8 +1310,8 @@ function render(){
         '<option value="">— Aucun —</option>'+
         Object.keys(TYPES).map(function(k){return'<option value="'+k+'"'+(t.type===k?' selected':'')+'>'+TYPES[k]+'</option>';}).join('')+
         '</select></div>'+
-        '<div class="edit-row" style="align-items:flex-start"><span class="edit-lbl" style="padding-top:7px">Details</span>'+
-        '<textarea class="edit-inp" id="ei-details-'+t.id+'" rows="3" placeholder="Description, materiaux, etapes, outils requis..." style="resize:vertical;line-height:1.45">'+esc(t.details||'')+'</textarea></div>'+
+        '<div class="edit-row" style="align-items:flex-start"><span class="edit-lbl" style="padding-top:7px">Détails</span>'+
+        '<textarea class="edit-inp" id="ei-details-'+t.id+'" rows="3" placeholder="Description, matériaux, étapes, outils requis..." style="resize:vertical;line-height:1.45">'+esc(t.details||'')+'</textarea></div>'+
         '<div class="edit-actions">'+
         '<button class="edit-save" onclick="saveTaskEdit(\''+t.id+'\')">Enregistrer</button>'+
         '<button class="edit-cancel-btn" onclick="openEditPanel(\''+t.id+'\')">Annuler</button>'+
@@ -1316,7 +1326,7 @@ function render(){
         '<div class="card-bottom">'+
         '<div class="'+cls(v)+' card-status">'+lbl(v)+'</div>'+
         nameHtml+
-        '<input class="coord-input" placeholder="Nom(s) benevoles" value="'+esc(nm)+'" oninput="setNm(\''+t.id+'\',this.value)">'+
+        '<input class="coord-input" placeholder="Nom(s) bénévoles" value="'+esc(nm)+'" oninput="setNm(\''+t.id+'\',this.value)">'+
         btnHtml+
         releaseHtml+
         (v==='en-cours'?'<button class="join-btn" onclick="joinTask(\''+t.id+'\')">+ Se joindre</button>':'')+
@@ -1326,7 +1336,7 @@ function render(){
             ' <button class="extra-remove" data-name="'+esc(en)+'" onclick="leaveTask(\''+t.id+'\',this.dataset.name)" title="Retirer">&#x2715;</button></span>';
         }).join('')+'</div>':'')+
         (v==='en-cours'?'<div class="join-form" id="join-form-'+t.id+'">'+
-          '<input class="claim-input" id="join-input-'+t.id+'" placeholder="Ton prenom..." maxlength="40"'+
+          '<input class="claim-input" id="join-input-'+t.id+'" placeholder="Ton prénom..." maxlength="40"'+
             (myName?' value="'+myName.replace(/"/g,'&quot;')+'"':'')+
             ' onkeydown="if(event.key===\'Enter\')submitJoin(\''+t.id+'\')">'+
           '<button class="claim-submit" id="join-submit-'+t.id+'" onclick="submitJoin(\''+t.id+'\')">Confirmer</button>'+
@@ -1353,7 +1363,7 @@ function render(){
             h+='<div class="st-bar-wrap"><div class="st-bar-fill" style="width:'+pctSt+'%"></div></div>';
           }
           h+='<div class="st-add-row">'+
-            '<input class="st-add-inp" id="st-add-'+t.id+'" placeholder="Ajouter une sous-tache..." maxlength="120"'+
+            '<input class="st-add-inp" id="st-add-'+t.id+'" placeholder="Ajouter une sous-tâche..." maxlength="120"'+
               ' onkeydown="if(event.key===\'Enter\')addSubtask(\''+t.id+'\')">'+
             '<button class="st-add-btn" onclick="addSubtask(\''+t.id+'\')">+</button>'+
           '</div>';
@@ -1364,9 +1374,9 @@ function render(){
         editPanel+
         '</div>';
     });
-    html+='<button class="add-task-btn" onclick="addTask(\''+section.p+'\')">+ Ajouter une tache a cette section</button>';
+    html+='<button class="add-task-btn" onclick="addTask(\''+section.p+'\')">+ Ajouter une tâche à cette section</button>';
   });
-  document.getElementById('board').innerHTML=html||'<div class="empty-state"><div>&#128269;</div>Aucun chantier trouve</div>';
+  document.getElementById('board').innerHTML=html||'<div class="empty-state"><div>&#128269;</div>Aucun chantier trouvé</div>';
   checkCelebration();
 }
 
